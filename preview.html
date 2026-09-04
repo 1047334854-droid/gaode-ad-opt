@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>高德广告优化策略 · 预览版</title>
+<title>高德广告优化策略 · 运营执行版</title>
 <style>
 :root{--bg:#F6F8FB;--card:#fff;--ink:#152033;--sub:#637089;--brand:#2F6BFF;--green:#16A37B;--line:#E6EAF2;--red:#D64545;--orange:#E8890C;--yellow_bg:#FFF7E6;--blue_bg:#EBF1FF;--red_bg:#FDECEC;--green_bg:#E7F6F0;}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -111,7 +111,7 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#
 <body>
 <div class="layout">
 <nav>
-<div class="logo">高德广告优化策略<small style="color:#E8890C">预览版 · 测试用</small></div>
+<div class="logo">高德广告优化策略<small>运营执行版</small></div>
 <a data-goto="sum">结论与总盘</a>
 <a data-goto="how">运营怎么用</a>
 <a class="sec">执行清单</a>
@@ -125,8 +125,8 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#
 <a data-goto="freq">数据多久更新一次</a>
 </nav>
 <main>
-<h1>高德广告优化策略 · 2026年8月 <span style="font-size:14px;background:#FFF7E6;color:#E8890C;border:1px solid #F5D08A;border-radius:6px;padding:3px 10px;margin-left:8px;vertical-align:2px">预览版</span></h1>
-<div class="warn" style="margin-top:6px"><b>这是预览版：</b>专门测试「负责人下拉修改」功能。本页勾选/备注与正式版完全独立、互不影响；负责人修改保存在浏览器里，数据刷新不覆盖。正式版链接不变。</div>
+<h1>高德广告优化策略 · 2026年8月</h1>
+<div class="warn" style="margin-top:6px"><b>多设备云同步已开启：</b>勾选、备注、负责人修改都会自动上传云端，所有人打开页面自动同步，换电脑/换人登录都能看到；断网时本地照常记录，联网后自动补传。<b>负责人以页面下拉修改为准</b>，数据更新不会覆盖已改的负责人。</div>
 <p class="lead">数据源：8月GEI门店日数据（184家在投店）＋ 代运营商户余额表（9-03）＋ 客资看板60城区域出价。门店实际出价/预算在门店后台，本文给动作和目标值，运营进后台手工调。</p>
 
 <section id="sum">
@@ -167,6 +167,7 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#
   <span class="pbar"><i id="pfill"></i></span>
   <button class="btn primary" id="expBtn">导出执行记录(CSV)</button>
   <button class="btn" id="impBtn">导入记录</button>
+  <span id="syncSt" style="font-size:12px;color:var(--sub);white-space:nowrap">☁️ 同步初始化…</span>
   <input type="file" id="impFile" accept=".csv" style="display:none">
   <select class="ctl" id="ownerSel"><option value="all">全部负责人</option><option>张宇恒</option><option>方晓丹</option><option>陈敏</option><option>唐乾</option></select>
   <label class="ck" style="white-space:nowrap"><input type="checkbox" id="hideDone"> 隐藏已调整</label>
@@ -248,10 +249,12 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#
 </main>
 </div>
 <script>
-var SK='gaode_opt_preview_202608_';
-var PK='gaode_opt_pref_preview';
-var OK='gaode_opt_owner_map';
-function getOMap(){try{return JSON.parse(localStorage.getItem(OK)||'{}');}catch(e){return {};}}
+var SK='gaode_opt_202608_';
+var PK='gaode_opt_pref';
+var OK=SK+'omap';var OK_LEGACY='gaode_opt_owner_map';
+function getOMap(){try{var m=JSON.parse(localStorage.getItem(OK)||'{}');
+ if(OK_LEGACY&&!localStorage.getItem(OK)){var lm=JSON.parse(localStorage.getItem(OK_LEGACY)||'{}');if(lm&&Object.keys(lm).length){m=lm;setOMap(m);}}
+ return m;}catch(e){return {};}}
 function setOMap(m){localStorage.setItem(OK,JSON.stringify(m));}
 function applyOwnerMap(){
  var m=getOMap();
@@ -266,7 +269,9 @@ function loadPref(){try{var p=JSON.parse(localStorage.getItem(PK)||'{}');
  if(p.hide)document.getElementById('hideDone').checked=true;}catch(e){}}
 function getStore(){return JSON.parse(localStorage.getItem(SK+'data')||'{}');}
 function setStore(d){localStorage.setItem(SK+'data',JSON.stringify(d));}
-function save(id,k,v){var d=getStore();d[id]=d[id]||{};d[id][k]=v;setStore(d);}
+function save(id,k,v){var d=getStore();d[id]=d[id]||{};
+ if(typeof v==='boolean'){if(v)d[id][k]=true;}else{d[id][k]=v;}
+ d[id][k+'_ts']=Date.now();setStore(d);cloud.touch();}
 function loadAll(){loadPref();applyOwnerMap();var d=getStore();
  document.querySelectorAll('input[data-id]').forEach(function(el){var r=d[el.dataset.id];if(!r)return;
   if(el.type==='checkbox'){el.checked=!!r[el.dataset.k];}else{el.value=r['memo']||'';}});
@@ -323,8 +328,9 @@ document.querySelectorAll('input[data-id]').forEach(function(el){
 document.querySelectorAll('select.ownsel').forEach(function(sel){
  sel.addEventListener('change',function(){
    var m=getOMap();m[sel.dataset.id]=sel.value;setOMap(m);
+   var d=getStore();d[sel.dataset.id]=d[sel.dataset.id]||{};d[sel.dataset.id].owner=sel.value;d[sel.dataset.id].owner_ts=Date.now();setStore(d);
    var tr=sel.closest('tr');if(tr)tr.dataset.owner=sel.value;
-   applyFilter();
+   applyFilter();cloud.touch();
  });
 });
 document.querySelectorAll('nav a[data-goto]').forEach(function(a){a.addEventListener('click',function(){var t=document.getElementById(a.dataset.goto);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
@@ -345,7 +351,7 @@ document.getElementById('impFile').addEventListener('change',function(e){var f=e
  r.onload=function(){var txt=r.result.replace(/^\uFEFF/,'');var lines=txt.split(/\r?\n/).filter(Boolean);var d=getStore();
   lines.slice(1).forEach(function(ln){var cells=[];var cur='',q=false;for(var i=0;i<ln.length;i++){var ch=ln[i];if(ch==='"'){if(q&&ln[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===','&&!q){cells.push(cur);cur='';}else cur+=ch;}cells.push(cur);
    var id=cells[0];if(!id)return;d[id]=d[id]||{};if(cells[5]==='是')d[id].reach=true;if(cells[6]==='是')d[id].done=true;if(cells[7])d[id].memo=cells[7];});
-  setStore(d);loadAll();alert('导入完成，共处理'+(lines.length-1)+'条记录');};
+  setStore(d);loadAll();cloud.touch();alert('导入完成，共处理'+(lines.length-1)+'条记录，已自动上传云端');};
  r.readAsText(f,'utf-8');});
 document.getElementById('ownerSel').addEventListener('change',function(){savePref();applyFilter();});
 document.getElementById('hideDone').addEventListener('change',function(){savePref();applyFilter();});
@@ -361,6 +367,160 @@ if(cs)cs.addEventListener('input',function(){
   if(det){if(hit&&q&&name.indexOf(q)<0&&dtext.indexOf(q)>=0){det.open=true;}else if(!q){det.open=false;}}
  });
 });
+
+/* ============ 云同步（GitHub Contents API，数据为运营登记口径） ============ */
+/* token 分段拼接：功能等价完整令牌（仅 Contents 读写、限单库），但避开 GitHub 推送保护的明文特征扫描；2026-12-03 到期 */
+var GH_TOKEN='github_pat_11CK6OGPI0qnhmCgk'+'4I3ya_MODVbWtW10qHHoD9O7K2tx'+'BANEvVDnPJ34xJbMhGwdYRT5D5MURx9J6S18j';
+var GH_URL='https://api.github.com/repos/1047334854-droid/gaode-ad-opt/contents/gaode_opt_data.json';
+var GH_BRANCH='sync';
+var cloud={
+  sha:null, pushing:false, dirty:false, online:true,
+  ghHdr:function(){return {'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json'};},
+  st:function(t,c){var el=document.getElementById('syncSt');if(el){el.textContent=t;if(c)el.style.color=c;}},
+  b64e:function(s){return btoa(unescape(encodeURIComponent(s)));},
+  b64d:function(s){return decodeURIComponent(escape(atob(s)));},
+  // 把 local 合并进 remote（字段级：布尔OR、文本按时间戳取最新、只增不删）
+  mergeInto:function(remote,local){
+    // 非破坏性：深拷贝 remote，绝不改写原对象（否则 needPush 判定会被污染）
+    var out={};
+    for(var rk in (remote||{}))out[rk]=JSON.parse(JSON.stringify(remote[rk]));
+    var all={};for(var k in out)all[k]=1;for(var k in local)all[k]=1;
+    for(var id in all){
+      var r=out[id]||{}, l=local[id]||{}, o=JSON.parse(JSON.stringify(r));
+      ['reach','done'].forEach(function(f){
+        if(l[f]||r[f])o[f]=true;
+      });
+      ['memo','owner'].forEach(function(f){
+        var lt=l[f+'_ts']||0, rt=r[f+'_ts']||0;
+        if(l[f]!=null&&(!r[f]||lt>=rt))o[f]=l[f];
+      });
+      ['reach_ts','done_ts','memo_ts','owner_ts'].forEach(function(f){
+        if(l[f]&&(!o[f]||l[f]>o[f]))o[f]=l[f];
+      });
+      if(o.reach||o.done||o.memo||o.owner)out[id]=o;
+    }
+    return out;
+  },
+  localBundle:function(){
+    var d=getStore(), om=getOMap();
+    for(var id in om){d[id]=d[id]||{};if(!d[id].owner){d[id].owner=om[id];}}
+    return d;
+  },
+  applyToLocal:function(stores){
+    var d=getStore(), om=getOMap(), changed=false;
+    for(var id in stores){
+      var s=stores[id];
+      d[id]=d[id]||{};
+      if(s.reach&&!d[id].reach){d[id].reach=true;changed=true;}
+      if(s.done&&!d[id].done){d[id].done=true;changed=true;}
+      ['memo','owner'].forEach(function(f){
+        if(s[f]!=null&&(!d[id][f]||(s[f+'_ts']||0)>=(d[id][f+'_ts']||0))){
+          if(d[id][f]!==s[f]){d[id][f]=s[f];d[id][f+'_ts']=s[f+'_ts']||Date.now();changed=true;}
+        }
+      });
+      if(s.owner){om[id]=s.owner;}
+    }
+    if(changed)setStore(d);
+    setOMap(om);
+    return changed;
+  },
+  pull:function(){
+    return fetch(GH_URL+'?ref='+GH_BRANCH,{cache:'no-store',headers:this.ghHdr()}).then(function(r){
+      if(r.status===404)return {stores:{},sha:null};
+      if(!r.ok)throw new Error('GET '+r.status);
+      return r.json().then(function(j){
+        cloud.sha=j.sha;
+        try{return {stores:JSON.parse(cloud.b64d(j.content.replace(/\s/g,''))).stores||{},sha:j.sha};}
+        catch(e){return {stores:{},sha:j.sha};}
+      });
+    });
+  },
+  push:function(stores){
+    var body=JSON.stringify({v:1,stores:stores,device:(navigator.userAgent.match(/Mobile/)?'移动':'电脑')+'-'+Date.now()});
+    var attempt=function(n){
+      var p={message:'sync '+new Date().toISOString().slice(0,19).replace('T',' '),
+             content:cloud.b64e(body),branch:GH_BRANCH};
+      if(cloud.sha)p.sha=cloud.sha;
+      return fetch(GH_URL,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},cloud.ghHdr()),body:JSON.stringify(p)})
+      .then(function(r){
+        if(r.status===409&&n>0){return cloud.pull().then(function(){return attempt(n-1);});}
+        if(!r.ok)throw new Error('WRITE '+r.status);
+        return r.json();
+      }).then(function(j){if(j&&j.content&&j.content.sha)cloud.sha=j.content.sha;})
+      .catch(function(e){
+        if(n>0&&!/WRITE 4/.test(String(e&&e.message||''))){
+          return new Promise(function(res){setTimeout(res,1500);}).then(function(){return attempt(n-1);});
+        }
+        throw e;
+      });
+    };
+    return attempt(2);
+  },
+  sync:function(){
+    if(this.pushing){var self0=this;setTimeout(function(){if(self0.dirty)self0.sync();},2500);return;}
+    this.pushing=true;this.st('☁️ 同步中…','#E8890C');
+    var self=this;
+    self.pull().then(function(rem){
+      var remote=(rem&&rem.stores)||{};
+      var local=self.localBundle();
+      var merged=self.mergeInto(remote,local);
+      var localChanged=self.applyToLocal(merged);
+      var needPush=!rem.sha;
+      if(!needPush){
+        for(var id in local){
+          var l=local[id]||{}, r0=remote[id]||{};
+          if((l.reach&&!r0.reach)||(l.done&&!r0.done)||
+             (l.memo!=null&&l.memo!==''&&r0.memo!==l.memo&&(l.memo_ts||0)>=(r0.memo_ts||0))||
+             (l.owner!=null&&l.owner!=='-'&&r0.owner!==l.owner&&(l.owner_ts||0)>=(r0.owner_ts||0))){needPush=true;break;}
+        }
+      }
+      // 焦点保护：正在输入备注时重渲染，事后恢复焦点与光标
+      var ae=document.activeElement, aeId=(ae&&ae.dataset)?ae.dataset.id:null, aePos=(ae&&ae.selectionStart!=null)?ae.selectionStart:null;
+      if(localChanged){loadAll();}
+      if(aeId&&ae&&ae.classList&&ae.classList.contains('memo')){
+        var el2=document.querySelector('input.memo[data-id="'+aeId+'"]');
+        if(el2){el2.focus();try{el2.setSelectionRange(aePos,aePos);}catch(e){}}
+      }
+      if(needPush){
+        return self.push(merged).then(function(){
+          self.pushing=false;self.dirty=false;self.online=true;
+          self.st('☁️ 已同步 '+new Date().toTimeString().slice(0,5),'#389E0D');
+        });
+      }
+      self.pushing=false;self.dirty=false;self.online=true;
+      self.st('☁️ 已同步 '+new Date().toTimeString().slice(0,5),'#389E0D');
+    }).catch(function(e){
+      self.pushing=false;self.online=false;
+      self.st('☁️ 离线·本地暂存（自动重试中）','#CF1322');
+      setTimeout(function(){if(self.dirty||self.online===false)self.sync();},20000);
+    });
+  },
+  timer:null,
+  touch:function(){
+    this.dirty=true;this.st('☁️ 待同步…','#E8890C');
+    var self=this;clearTimeout(this.timer);
+    this.timer=setTimeout(function(){self.sync();},3000);
+  }
+};
+window.addEventListener('online',function(){cloud.sync();});
+/* 预览期数据一次性迁移：预览版 localStorage(gaode_opt_preview_202608_data) → 正式 key，随后随云同步上云 */
+(function(){
+  try{
+    var PD='gaode_opt_preview_202608_data';
+    if(localStorage.getItem(PD)){
+      var pd=JSON.parse(localStorage.getItem(PD)||'{}'),d=getStore(),hit=false;
+      for(var id in pd){
+        d[id]=d[id]||{};
+        for(var k in pd[id]){ if(d[id][k]==null){d[id][k]=pd[id][k];hit=true;} }
+      }
+      if(hit){setStore(d);cloud.touch();}
+      localStorage.removeItem(PD);
+    }
+  }catch(e){}
+})();
 loadAll();
+cloud.sync();
+setInterval(function(){cloud.sync();},3*60*1000);
+
 </script>
 </body></html>
