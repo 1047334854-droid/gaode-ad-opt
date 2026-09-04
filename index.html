@@ -503,6 +503,21 @@ var cloud={
   }
 };
 window.addEventListener('online',function(){cloud.sync();});
+/* 预览期数据一次性迁移：预览版 localStorage(gaode_opt_preview_202608_data) → 正式 key，随后随云同步上云 */
+(function(){
+  try{
+    var PD='gaode_opt_preview_202608_data';
+    if(localStorage.getItem(PD)){
+      var pd=JSON.parse(localStorage.getItem(PD)||'{}'),d=getStore(),hit=false;
+      for(var id in pd){
+        d[id]=d[id]||{};
+        for(var k in pd[id]){ if(d[id][k]==null){d[id][k]=pd[id][k];hit=true;} }
+      }
+      if(hit){setStore(d);cloud.touch();}
+      localStorage.removeItem(PD);
+    }
+  }catch(e){}
+})();
 loadAll();
 cloud.sync();
 setInterval(function(){cloud.sync();},3*60*1000);
