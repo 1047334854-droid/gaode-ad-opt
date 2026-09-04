@@ -106,6 +106,33 @@ details.dist[open] summary{margin-bottom:8px}
 footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#9AA5BC;font-size:12px}
 @media(max-width:860px){nav{position:static;width:auto}.layout{flex-direction:column}nav{display:flex;flex-wrap:wrap;padding:10px}nav .logo{width:100%;border:none}nav a.sec{display:none}nav a{border:none;padding:6px 12px;font-size:12px}main{margin-left:0;padding:20px 16px}.region-list{grid-template-columns:1fr}}
 @media print{nav{display:none}main{margin:0;padding:0;max-width:none}.tbl-wrap,.city-card,.progress-bar,.btn{break-inside:avoid}details.dist,details.grp{break-inside:avoid}details.dist > div,details.grp > div{display:block!important}}
+
+/* ===== 备注浮层 + 已处理历史区 ===== */
+tr.row-archived{display:none!important;}
+#memoPop{position:fixed;z-index:9999;background:#fff;border:1px solid #D9D9D9;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:14px;width:min(92vw,560px);}
+#memoPop textarea{width:100%;height:150px;border:1px solid #D9D9D9;border-radius:6px;padding:8px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical;}
+#memoPop .mp-t{font-size:13px;color:#8c8c8c;margin-bottom:8px;font-weight:600;}
+#memoPop .mp-b{margin-top:10px;text-align:right;}
+#memoPop button{background:#1677FF;color:#fff;border:0;border-radius:6px;padding:6px 18px;font-size:13px;cursor:pointer;}
+#archBox{margin:18px 6px 40px;border:1px solid #D9D9D9;border-radius:10px;background:#FAFAFA;}
+#archBox>summary{padding:12px 16px;cursor:pointer;font-weight:700;font-size:15px;color:#262626;list-style:none;}
+#archBox>summary::before{content:'▸ ';color:#1677FF;}
+#archBox[open]>summary::before{content:'▾ ';}
+#archBox summary .arch-cnt{color:#1677FF;font-weight:600;margin-left:4px;}
+#archBox summary .arch-sub{font-weight:400;color:#8c8c8c;font-size:12px;margin-left:8px;}
+#archBox .arch-body{padding:0 16px 14px;}
+#archBox table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;}
+#archBox th,#archBox td{border-bottom:1px solid #F0F0F0;padding:8px 10px;text-align:left;vertical-align:middle;}
+#archBox th{background:#F5F7FA;color:#595959;font-weight:600;white-space:nowrap;}
+#archBox td.arch-memo-c{min-width:180px;}
+#archBox .moved-tag{color:#FA8C16;font-size:12px;border:1px solid #FFD591;background:#FFF7E6;border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap;}
+#archBox .st-ok{color:#389E0D;font-weight:600;white-space:nowrap;}
+#archBox input.memo{width:100%;min-width:160px;border:1px solid #E8E8E8;border-radius:5px;padding:5px 8px;font-size:13px;box-sizing:border-box;cursor:pointer;background:#FAFAFA;}
+#archBox input[type=checkbox]{cursor:pointer;}
+#archBox .arch-owner{color:#595959;white-space:nowrap;}
+#archBox .arch-time{color:#bfbfbf;font-size:12px;white-space:nowrap;}
+.grp .arch-note{color:#FA8C16;font-size:12px;margin:4px 10px 8px;}
+
 </style>
 </head>
 <body>
@@ -270,11 +297,15 @@ function loadPref(){try{var p=JSON.parse(localStorage.getItem(PK)||'{}');
 function getStore(){return JSON.parse(localStorage.getItem(SK+'data')||'{}');}
 function setStore(d){localStorage.setItem(SK+'data',JSON.stringify(d));}
 function save(id,k,v){var d=getStore();d[id]=d[id]||{};
- if(typeof v==='boolean'){if(v)d[id][k]=true;}else{d[id][k]=v;}
- d[id][k+'_ts']=Date.now();setStore(d);cloud.touch();}
+ if(typeof v==='boolean'){
+   if(v){d[id][k]=true;d[id][k+'_ts']=Date.now();}
+   else{d[id][k+'_un']=Date.now();}
+ }else{d[id][k]=v;d[id][k+'_ts']=Date.now();}
+ setStore(d);cloud.touch();}
+ function recOn(r,k){return !!(r&&r[k]&&(!r[k+'_un']||r[k+'_un']<(r[k+'_ts']||0)));}
 function loadAll(){loadPref();applyOwnerMap();var d=getStore();
  document.querySelectorAll('input[data-id]').forEach(function(el){var r=d[el.dataset.id];if(!r)return;
-  if(el.type==='checkbox'){el.checked=!!r[el.dataset.k];}else{el.value=r['memo']||'';}});
+  if(el.type==='checkbox'){el.checked=recOn(r,el.dataset.k);}else{el.value=r['memo']||'';}});
  refresh();}
 function refresh(){
  var reach=0,done=0,tot=0;
@@ -306,7 +337,7 @@ function applyFilter(){
      if(dc&&dc.checked)show=false;}
    tr.classList.toggle('row-hidden',!show);});
  document.querySelectorAll('details.grp').forEach(function(dg){
-   var vis=dg.querySelectorAll('tr[data-id]:not(.row-hidden)').length;
+   var vis=dg.querySelectorAll('tr[data-id]:not(.row-hidden):not(.row-archived)').length;
    dg.classList.toggle('grp-empty',filtering&&vis===0);
    if(filtering)dg.open=(vis>0);
    var gm=dg.querySelector('.gmatch');
@@ -388,16 +419,26 @@ var cloud={
     for(var id in all){
       var r=out[id]||{}, l=local[id]||{}, o=JSON.parse(JSON.stringify(r));
       ['reach','done'].forEach(function(f){
-        if(l[f]||r[f])o[f]=true;
+        // 勾选/撤销均带时间戳：取勾选_ts与撤销_un较新者决定最终状态（撤销可跨设备传播）
+        var lOn=!!l[f], rOn=!!r[f];
+        var onT=Math.max(l[f+'_ts']||0, r[f+'_ts']||0);
+        var unT=Math.max(l[f+'_un']||0, r[f+'_un']||0);
+        if(onT===0&&unT===0&&(lOn||rOn)){o[f]=true;}  // 旧版数据无时间戳：保留勾选，绝不清掉
+        else{o[f]=onT>unT;}
+        // 时间戳原样取双方最大值（含撤销_un）
+        o[f+'_un']=Math.max(l[f+'_un']||0, r[f+'_un']||0, o[f+'_un']||0);
+        o[f+'_ts']=Math.max(l[f+'_ts']||0, r[f+'_ts']||0, o[f+'_ts']||0);
       });
       ['memo','owner'].forEach(function(f){
         var lt=l[f+'_ts']||0, rt=r[f+'_ts']||0;
         if(l[f]!=null&&(!r[f]||lt>=rt))o[f]=l[f];
       });
-      ['reach_ts','done_ts','memo_ts','owner_ts'].forEach(function(f){
-        if(l[f]&&(!o[f]||l[f]>o[f]))o[f]=l[f];
+      // name/city 快照：本地有值即带上（门店移出名单后历史区仍显示名称/城市）
+      ['name','city','owner'].forEach(function(f){
+        if(l[f]!=null&&l[f]!==''&&l[f]!=='-'&&(!o[f]||o[f]==='-'||o[f]==='')){o[f]=l[f];}
       });
-      if(o.reach||o.done||o.memo||o.owner)out[id]=o;
+      // 有任何有效数据即保留（含撤销标记_un，否则撤销无法上云传播）
+      if(recOn(o,'reach')||recOn(o,'done')||o.memo||o.owner||o.name||o.reach_un||o.done_un)out[id]=o;
     }
     return out;
   },
@@ -411,14 +452,26 @@ var cloud={
     for(var id in stores){
       var s=stores[id];
       d[id]=d[id]||{};
-      if(s.reach&&!d[id].reach){d[id].reach=true;changed=true;}
-      if(s.done&&!d[id].done){d[id].done=true;changed=true;}
+      // 勾选状态按 勾选_ts vs 撤销_un 较新者同步（含撤销）；老数据无时间戳一律保留
+      ['reach','done'].forEach(function(f){
+        var sOn=s[f+'_ts']||0, sUn=s[f+'_un']||0;
+        var lOn=d[id][f+'_ts']||0, lUn=d[id][f+'_un']||0;
+        if(sOn>lOn){d[id][f+'_ts']=sOn;changed=true;}
+        if(sUn>lUn){d[id][f+'_un']=sUn;changed=true;}
+        var on=Math.max(d[id][f+'_ts']||0,sOn), un=Math.max(d[id][f+'_un']||0,sUn);
+        var shouldOn;
+        if(on===0&&un===0){shouldOn=!!(s[f]||d[id][f]); if(shouldOn&&!d[id][f+'_ts']){d[id][f+'_ts']=Date.now();changed=true;}}
+        else{shouldOn=on>un;}
+        if(recOn(d[id],f)!==shouldOn){changed=true;}
+        d[id][f]=shouldOn;
+      });
       ['memo','owner'].forEach(function(f){
         if(s[f]!=null&&(!d[id][f]||(s[f+'_ts']||0)>=(d[id][f+'_ts']||0))){
           if(d[id][f]!==s[f]){d[id][f]=s[f];d[id][f+'_ts']=s[f+'_ts']||Date.now();changed=true;}
         }
       });
       if(s.owner){om[id]=s.owner;}
+      ['name','city'].forEach(function(f){ if(s[f]&&!d[id][f]){d[id][f]=s[f];changed=true;} });
     }
     if(changed)setStore(d);
     setOMap(om);
@@ -467,11 +520,15 @@ var cloud={
       var localChanged=self.applyToLocal(merged);
       var needPush=!rem.sha;
       if(!needPush){
+        // 任一字段（勾选/撤销/备注/负责人）本地时间戳新于云端 → 回推
+        var tFields=['reach_ts','done_ts','reach_un','done_un','memo_ts','owner_ts'];
         for(var id in local){
           var l=local[id]||{}, r0=remote[id]||{};
-          if((l.reach&&!r0.reach)||(l.done&&!r0.done)||
-             (l.memo!=null&&l.memo!==''&&r0.memo!==l.memo&&(l.memo_ts||0)>=(r0.memo_ts||0))||
-             (l.owner!=null&&l.owner!=='-'&&r0.owner!==l.owner&&(l.owner_ts||0)>=(r0.owner_ts||0))){needPush=true;break;}
+          for(var fi=0;fi<tFields.length;fi++){
+            if((l[tFields[fi]]||0)>(r0[tFields[fi]]||0)){needPush=true;break;}
+          }
+          if(!needPush&&l.name&&!r0.name){needPush=true;}
+          if(needPush)break;
         }
       }
       // 焦点保护：正在输入备注时重渲染，事后恢复焦点与光标
@@ -519,6 +576,169 @@ window.addEventListener('online',function(){cloud.sync();});
   }catch(e){}
 })();
 loadAll();
+
+/* ===== 备注大输入浮层（点击任意备注框弹出，长文看得全、手机好输入） ===== */
+(function(){
+  var pop=document.createElement('div');pop.id='memoPop';pop.style.display='none';
+  pop.innerHTML='<div class="mp-t"></div><textarea placeholder="填写跟进日期、沟通结果、下一步动作…"></textarea><div class="mp-b"><button type="button">完成</button></div>';
+  document.body.appendChild(pop);
+  var ta=pop.querySelector('textarea'),tEl=pop.querySelector('.mp-t'),curId=null;
+  function close(saveFlag){
+    if(saveFlag&&curId){
+      var v=ta.value;
+      document.querySelectorAll('input.memo[data-id="'+curId+'"]').forEach(function(inp){inp.value=v;});
+      // 等价 save(id,'memo',v)：直接写存储+时间戳+触发同步（不依赖闭包外函数）
+      try{
+        var d=getStore();d[curId]=d[curId]||{};d[curId].memo=v;d[curId].memo_ts=Date.now();setStore(d);
+        if(window.cloud&&cloud.touch)cloud.touch();
+      }catch(e){}
+    }
+    pop.style.display='none';curId=null;
+  }
+  pop.querySelector('button').onclick=function(){close(true);};
+  ta.onkeydown=function(e){if(e.key==='Escape'){close(false);}if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){close(true);}};
+  document.addEventListener('click',function(e){
+    var inp=e.target.closest('input.memo');
+    if(inp){
+      e.preventDefault();
+      curId=inp.dataset.id;
+      var tr=inp.closest('tr');
+      var nm=tr?tr.querySelector('td.nm'):null;
+      var d=getStore()[curId]||{};
+      tEl.textContent=(nm?nm.textContent:'门店')+' · 跟进备注';
+      ta.value=inp.value||d.memo||'';
+      pop.style.display='block';
+      var r=inp.getBoundingClientRect();
+      var top=Math.min(r.bottom+8, window.innerHeight-360);
+      pop.style.top=Math.max(70,top)+'px';
+      pop.style.left=Math.max(10,(window.innerWidth-pop.offsetWidth)/2)+'px';
+      setTimeout(function(){ta.focus();},30);
+      return;
+    }
+    if(pop.style.display==='block'&&!pop.contains(e.target)){close(true);}
+  },true);
+  window.addEventListener('resize',function(){if(pop.style.display==='block'){pop.style.left=Math.max(10,(window.innerWidth-pop.offsetWidth)/2)+'px';}});
+})();
+
+/* ===== 已处理历史区：已触达/已调整自动折叠到底部历史，门店移出名单也能回看 ===== */
+(function(){
+  var box=document.createElement('details');box.id='archBox';
+  box.innerHTML='<summary>📦 近期已处理 · 历史记录<span class="arch-cnt"></span><span class="arch-sub">勾选「已触达/已调整」后自动收进这里，换月/门店移出名单都可回看；取消勾选可回到待办</span></summary><div class="arch-body"></div>';
+  function grpContainer(){
+    var grps=document.querySelectorAll('details.grp');
+    return grps.length?grps[grps.length-1].parentNode:document.body;
+  }
+  grpContainer().appendChild(box);
+  var body=box.querySelector('.arch-body'),cnt=box.querySelector('.arch-cnt');
+
+  function fmt(ts){
+    if(!ts)return '';
+    var dt=new Date(ts);
+    function p(n){return (n<10?'0':'')+n;}
+    return (dt.getMonth()+1)+'-'+p(dt.getDate())+' '+p(dt.getHours())+':'+p(dt.getMinutes());
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  // 主表行：已勾选的快照名称/城市、打 row-archived 折叠
+  function snapshot(){
+    var d=getStore(),om=getOMap(),hit=false;
+    document.querySelectorAll('tr[data-id]').forEach(function(tr){
+      var id=tr.dataset.id;
+      var rc=document.querySelector('input[data-k="reach"][data-id="'+id+'"]');
+      var dc=document.querySelector('input[data-k="done"][data-id="'+id+'"]');
+      var done=(rc&&rc.checked)||(dc&&dc.checked);
+      tr.classList.toggle('row-archived',!!done);
+      if(done){
+        d[id]=d[id]||{};
+        var tds=tr.querySelectorAll('td');
+        var nm=tr.querySelector('td.nm');
+        if(nm&&!d[id].name){d[id].name=nm.textContent.trim();hit=true;}
+        if(tds[1]&&!d[id].city){d[id].city=tds[1].textContent.trim();hit=true;}
+        // 负责人：手改值优先，否则用主表默认分配 data-owner
+        var ow=(om[id]&&om[id]!=='-')?om[id]:(tr.dataset.owner||'');
+        if(ow&&!d[id].owner){d[id].owner=ow;hit=true;}
+      }
+    });
+    if(hit){setStore(d);cloud.touch();}
+  }
+
+  function render(){
+    var d=getStore(),om=getOMap();
+    var rows=[];
+    // 1) 在榜门店：以主表 checkbox 当前勾选状态为准（取消勾选即回待办）
+    document.querySelectorAll('tr[data-id]').forEach(function(tr){
+      var id=tr.dataset.id;
+      var rc=document.querySelector('input[data-k="reach"][data-id="'+id+'"]');
+      var dc=document.querySelector('input[data-k="done"][data-id="'+id+'"]');
+      var reach=rc&&rc.checked, done=dc&&dc.checked;
+      if(reach||done){
+        // 默认负责人取主表 data-owner（策略分配），手改则取 owner map
+        var owner=(om[id]&&om[id]!=='-')?om[id]:(tr.dataset.owner||'');
+        rows.push({id:id,reach:reach,done:done,inMain:true,owner:owner,
+          nm:tr.querySelector('td.nm')?tr.querySelector('td.nm').textContent.trim():'',
+          city:tr.querySelectorAll('td')[1]?tr.querySelectorAll('td')[1].textContent.trim():''});
+        // 顺带把负责人/名称快照进存储（历史回看、移出名单后仍在）
+        var dd=getStore()[id]||{};
+        if(owner&&!dd.owner){dd.owner=owner;}
+      }
+    });
+    // 2) 已移出门店：存储里有勾选记录但主表无此行（永久历史）
+    Object.keys(d).forEach(function(id){
+      if(id.charAt(0)==='_')return;
+      var s=d[id]||{};
+      var inMain=!!document.querySelector('tr[data-id="'+id+'"]');
+      if(!inMain&&(recOn(s,'reach')||recOn(s,'done'))){
+        rows.push({id:id,reach:recOn(s,'reach'),done:recOn(s,'done'),inMain:false,owner:s.owner||om[id]||'',
+          nm:s.name||id,city:s.city||''});
+      }
+    });
+    rows.sort(function(a,b){
+      var sa=d[a.id]||{},sb=d[b.id]||{};
+      var ta=Math.max(sa.done_ts||0,sa.reach_ts||0,sa.memo_ts||0);
+      var tb=Math.max(sb.done_ts||0,sb.reach_ts||0,sb.memo_ts||0);
+      return tb-ta;
+    });
+    cnt.textContent='（'+rows.length+'）';
+    if(!rows.length){body.innerHTML='<div style="color:#bfbfbf;font-size:13px;padding:8px 2px">暂无已处理记录——勾选「已触达」或「已调整」后自动收进这里</div>';return;}
+    var h='<table><tr><th>状态</th><th>门店</th><th>负责人</th><th>跟进备注</th><th>处理时间</th><th></th></tr>';
+    rows.forEach(function(r){
+      var s=d[r.id]||{};
+      var status=(r.done?'<span class="st-ok">✓ 已调整</span>':'<span class="st-ok">● 已触达</span>');
+      var name=esc(r.nm||r.id)+(r.inMain?'':'<span class="moved-tag">已移出名单</span>');
+      var owner=esc(r.owner||s.owner||om[r.id]||'—');
+      var memo=esc(s.memo||'');
+      var t=fmt(Math.max(s.done_ts||0,s.reach_ts||0))||'—';
+      var undo=r.inMain?'<a href="javascript:void(0)" class="arch-undo" data-id="'+r.id+'" style="color:#1677FF;font-size:12px;white-space:nowrap">↩ 回到待办</a>':'<span style="color:#bfbfbf;font-size:12px;white-space:nowrap">—</span>';
+      h+='<tr data-id="'+r.id+'"><td>'+status+'</td><td>'+name+'</td><td class="arch-owner">'+owner+'</td>'
+        +'<td class="arch-memo-c"><input type="text" class="memo" data-id="'+r.id+'" placeholder="点击查看/补充备注…" value="'+memo+'"></td>'
+        +'<td class="arch-time">'+t+'</td><td>'+undo+'</td></tr>';
+    });
+    h+='</table>';
+    body.innerHTML=h;
+    // 「回到待办」：取消主表两个勾选（在榜门店），自动回待办
+    body.querySelectorAll('.arch-undo').forEach(function(a){
+      a.onclick=function(){
+        var id=a.dataset.id;
+        ['reach','done'].forEach(function(k){
+          var c=document.querySelector('input[data-k="'+k+'"][data-id="'+id+'"]');
+          if(c&&c.checked){c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));}
+        });
+      };
+    });
+    // 备注框回填（innerHTML 重建后 value 以属性为准，已在 value 属性中）
+  }
+
+  window.Archive={refresh:function(){snapshot();render();}};
+  // loadAll 完成后再初始化折叠（此时勾选状态已从存储恢复，不会误折叠）
+  var _origLoadAll=window.loadAll;
+  window.loadAll=function(){_origLoadAll&&_origLoadAll();setTimeout(function(){snapshot();render();},0);};
+  // 用户手动勾选/取消勾选即时刷新（仅 reach/done 复选框触发；赋值引发的change无害，snapshot按实际状态重算）
+  document.addEventListener('change',function(e){
+    var c=e.target.closest('input[data-k]');
+    if(c&&(c.dataset.k==='reach'||c.dataset.k==='done')){setTimeout(function(){snapshot();render();},60);}
+  });
+})();
+
 cloud.sync();
 setInterval(function(){cloud.sync();},3*60*1000);
 
