@@ -133,6 +133,33 @@ tr.row-archived{display:none!important;}
 #archBox .arch-time{color:#bfbfbf;font-size:12px;white-space:nowrap;}
 .grp .arch-note{color:#FA8C16;font-size:12px;margin:4px 10px 8px;}
 
+
+/* ===== 备注浮层 + 已处理历史区 ===== */
+tr.row-archived{display:none!important;}
+#memoPop{position:fixed;z-index:9999;background:#fff;border:1px solid #D9D9D9;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:14px;width:min(92vw,560px);}
+#memoPop textarea{width:100%;height:150px;border:1px solid #D9D9D9;border-radius:6px;padding:8px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical;}
+#memoPop .mp-t{font-size:13px;color:#8c8c8c;margin-bottom:8px;font-weight:600;}
+#memoPop .mp-b{margin-top:10px;text-align:right;}
+#memoPop button{background:#1677FF;color:#fff;border:0;border-radius:6px;padding:6px 18px;font-size:13px;cursor:pointer;}
+#archBox{margin:18px 6px 40px;border:1px solid #D9D9D9;border-radius:10px;background:#FAFAFA;}
+#archBox>summary{padding:12px 16px;cursor:pointer;font-weight:700;font-size:15px;color:#262626;list-style:none;}
+#archBox>summary::before{content:'▸ ';color:#1677FF;}
+#archBox[open]>summary::before{content:'▾ ';}
+#archBox summary .arch-cnt{color:#1677FF;font-weight:600;margin-left:4px;}
+#archBox summary .arch-sub{font-weight:400;color:#8c8c8c;font-size:12px;margin-left:8px;}
+#archBox .arch-body{padding:0 16px 14px;}
+#archBox table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden;}
+#archBox th,#archBox td{border-bottom:1px solid #F0F0F0;padding:8px 10px;text-align:left;vertical-align:middle;}
+#archBox th{background:#F5F7FA;color:#595959;font-weight:600;white-space:nowrap;}
+#archBox td.arch-memo-c{min-width:180px;}
+#archBox .moved-tag{color:#FA8C16;font-size:12px;border:1px solid #FFD591;background:#FFF7E6;border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap;}
+#archBox .st-ok{color:#389E0D;font-weight:600;white-space:nowrap;}
+#archBox input.memo{width:100%;min-width:160px;border:1px solid #E8E8E8;border-radius:5px;padding:5px 8px;font-size:13px;box-sizing:border-box;cursor:pointer;background:#FAFAFA;}
+#archBox input[type=checkbox]{cursor:pointer;}
+#archBox .arch-owner{color:#595959;white-space:nowrap;}
+#archBox .arch-time{color:#bfbfbf;font-size:12px;white-space:nowrap;}
+.grp .arch-note{color:#FA8C16;font-size:12px;margin:4px 10px 8px;}
+
 </style>
 </head>
 <body>
@@ -194,6 +221,7 @@ tr.row-archived{display:none!important;}
   <span class="pbar"><i id="pfill"></i></span>
   <button class="btn primary" id="expBtn">导出执行记录(CSV)</button>
   <button class="btn" id="impBtn">导入记录</button>
+  <span id="syncSt" style="font-size:12px;color:var(--sub);white-space:nowrap">☁️ 同步初始化…</span>
   <span id="syncSt" style="font-size:12px;color:var(--sub);white-space:nowrap">☁️ 同步初始化…</span>
   <input type="file" id="impFile" accept=".csv" style="display:none">
   <select class="ctl" id="ownerSel"><option value="all">全部负责人</option><option>张宇恒</option><option>方晓丹</option><option>陈敏</option><option>唐乾</option></select>
@@ -471,6 +499,7 @@ var cloud={
         }
       });
       if(s.owner){om[id]=s.owner;}
+      ['name','city'].forEach(function(f){ if(s[f]&&!d[id][f]){d[id][f]=s[f];changed=true;} });
       ['name','city'].forEach(function(f){ if(s[f]&&!d[id][f]){d[id][f]=s[f];changed=true;} });
     }
     if(changed)setStore(d);
