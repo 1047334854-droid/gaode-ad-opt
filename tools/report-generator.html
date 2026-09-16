@@ -625,6 +625,50 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Report Viewer Overlay */
+.report-viewer-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #fff;
+  z-index: 9999;
+  flex-direction: column;
+}
+.report-viewer-overlay.active {
+  display: flex;
+}
+.report-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #2F6BFF;
+  color: #fff;
+  flex-shrink: 0;
+}
+.report-viewer-toolbar .back-btn {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.report-viewer-toolbar .back-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
+.report-viewer-toolbar .viewer-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+.report-viewer-frame {
+  flex: 1;
+  border: none;
+  width: 100%;
+  background: #F6F8FB;
+}
+
 /* Print */
 @media print {
   .app-header, .generate-section, .upload-card, .history-section { display: none; }
@@ -1014,12 +1058,7 @@ function generateReport() {
   // Generate report HTML synchronously (images already loaded as base64)
   const reportHtml = generateReportHtml(uploadedImages, dateStr);
   
-  // Create Blob URL
-  const blob = new Blob([reportHtml], { type: 'text/html' });
-  const reportUrl = URL.createObjectURL(blob);
-
-  // Open report in new tab IMMEDIATELY (within click handler to avoid popup blocker)
-  const reportWindow = window.open(reportUrl, '_blank');
+  // Show report in inline viewer (works on all browsers including mobile/WeChat)
   
   // Update progress to complete
   document.getElementById('progressFill').style.width = '100%';
@@ -1040,26 +1079,24 @@ function generateReport() {
     console.log('Report saved to IndexedDB:', reportId);
   }).catch(e => console.error('Save error:', e));
   
-  // Short delay then show result card
+  // Short delay then show result and open report
   setTimeout(() => {
     progress.classList.remove('active');
     document.getElementById('resultCard').classList.add('active');
     document.getElementById('resultTitle').textContent = '诊断报告已生成';
     document.getElementById('resultSubtitle').textContent = '生成时间：' + dateStr;
     document.getElementById('reportName').textContent = '诊断报告预览';
-    document.getElementById('previewUrl').textContent = '报告已在新标签页打开';
+    document.getElementById('previewUrl').textContent = '点击下方按钮查看报告';
     
     const previewBtn = document.getElementById('previewBtn');
     previewBtn.style.display = 'inline-block';
-    previewBtn.onclick = () => window.open(reportUrl, '_blank');
+    previewBtn.onclick = () => showReportInViewer(reportHtml, '诊断报告');
     
     btn.disabled = false;
 
-    if (!reportWindow) {
-      showToast('报告已生成，请点击「预览诊断报告」按钮打开');
-    } else {
-      showToast('报告已生成并在新标签页打开！');
-    }
+    // Auto-open the report in the inline viewer
+    showReportInViewer(reportHtml, '诊断报告');
+    showToast('报告已生成！');
   }, 800);
 }
 
@@ -1187,6 +1224,30 @@ function filterHistory() {
   renderHistory(q);
 }
 
+// Report Viewer - inline full-screen viewer (no popup issues)
+function showReportInViewer(html, title) {
+  const overlay = document.getElementById('reportViewerOverlay');
+  const frame = document.getElementById('reportViewerFrame');
+  const titleEl = document.getElementById('viewerTitle');
+  titleEl.textContent = title || '诊断报告';
+  
+  // Write HTML to iframe
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  frame.src = url;
+  
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReportViewer() {
+  const overlay = document.getElementById('reportViewerOverlay');
+  const frame = document.getElementById('reportViewerFrame');
+  frame.src = 'about:blank';
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
 // View a stored report from IndexedDB
 function viewReport(id) {
   const item = reportHistory.find(r => r.id === id);
@@ -1194,9 +1255,7 @@ function viewReport(id) {
     showToast('报告内容不存在，可能已过期');
     return;
   }
-  const blob = new Blob([item.html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  showReportInViewer(item.html, item.storeName || '诊断报告');
 }
 
 // Delete a report from history
@@ -1226,6 +1285,16 @@ function showToast(msg) {
 
 // Init: DB handles history loading and rendering
 </script>
+
+<!-- Report Viewer Overlay (inline, no popup blocker issues) -->
+<div class="report-viewer-overlay" id="reportViewerOverlay">
+  <div class="report-viewer-toolbar">
+    <button class="back-btn" onclick="closeReportViewer()">← 返回</button>
+    <span class="viewer-title" id="viewerTitle">诊断报告</span>
+    <span style="width:60px"></span>
+  </div>
+  <iframe class="report-viewer-frame" id="reportViewerFrame" sandbox="allow-same-origin"></iframe>
+</div>
 
 </body>
 </html>
