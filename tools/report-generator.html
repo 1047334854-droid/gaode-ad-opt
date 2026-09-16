@@ -1340,17 +1340,18 @@ function generateReportHtml(images, dateStr, storeName) {
     </div>`;
   });
 
-  // Screenshots
-  const searchImg = images['search-page'] ? `<img src="${images['search-page']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
-  const detailImgs = images['store-detail']?.length ? images['store-detail'].map(img =>
-    `<img src="${img}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">`
+  // Screenshots - always show prominently
+  const hasDataForm = m.exposure.self > 0; // if any metric filled, show data table
+  const searchImg = images['search-page'] ? `<div style="margin-top:16px;"><div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:600;">📸 搜索列表页截图（实拍）</div><img src="${images['search-page']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>` : '';
+  const detailImgs = images['store-detail']?.length ? images['store-detail'].map((img, i) =>
+    `<div style="margin-top:12px;"><div style="font-size:12px;color:var(--gray-400);margin-bottom:6px;font-weight:600;">📸 门店详情页截图${images['store-detail'].length > 1 ? ' ' + (i+1) : ''}（实拍）</div><img src="${img}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>`
   ).join('') : '';
-  const storeDataImg = images['store-data'] ? `<img src="${images['store-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
-  const partnerImg = images['partner-data'] ? `<img src="${images['partner-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
+  const storeDataImg = images['store-data'] ? `<div style="margin-top:16px;"><div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:600;">📸 门店经营数据截图（实拍）</div><img src="${images['store-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>` : '';
+  const partnerImg = images['partner-data'] ? `<div style="margin-top:16px;"><div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:600;">📸 周边合作门店数据截图（实拍）</div><img src="${images['partner-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);"></div>` : '';
 
   // Target calculation
-  const targetLow = Math.round(m.call.area * 0.3);
-  const targetHigh = Math.round(m.call.area * 0.5);
+  const targetLow = m.call.area > 0 ? Math.round(m.call.area * 0.3) : '—';
+  const targetHigh = m.call.area > 0 ? Math.round(m.call.area * 0.5) : '—';
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -1443,63 +1444,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="store-info-item"><div class="label">评价数</div><div class="value" style="color:var(--danger);">${d.reviews}条</div></div>
     <div class="store-info-item"><div class="label">团购项目</div><div class="value" style="color:var(--danger);">${d.deals}个</div></div>
   </div>
-  <table class="data-table">
-    <thead><tr><th>指标</th><th>本店</th><th>周边均值</th><th>同城均值</th><th>差距</th></tr></thead>
-    <tbody>
-      <tr><td>曝光量</td><td class="val-bad">${fmt(m.exposure.self)}</td><td>${fmt(m.exposure.area)}</td><td>${fmt(m.exposure.city)}</td><td><span class="gap-tag bad">仅周边${expPct}%</span></td></tr>
-      <tr><td>点击量</td><td class="val-bad">${fmt(m.click.self)}</td><td>${fmt(m.click.area)}</td><td>${fmt(m.click.city)}</td><td><span class="gap-tag bad">仅周边${clkPct}%</span></td></tr>
-      <tr><td>曝光→点击率</td><td class="val-warn">${d.clickRate}%</td><td>${d.clickRateArea}%</td><td>${d.clickRateCity}%</td><td><span class="gap-tag ${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'good':'bad'}">${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'高于周边':'略低'}</span></td></tr>
-      <tr><td>导航量</td><td class="val-bad">${fmt(m.nav.self)}</td><td>${fmt(m.nav.area)}</td><td>${fmt(m.nav.city)}</td><td><span class="gap-tag bad">仅周边${navPct}%</span></td></tr>
-      <tr><td>点击→导航率</td><td class="${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'val-good':'val-bad'}">${d.navRate}%</td><td>${d.navRateArea}%</td><td>${d.navRateCity}%</td><td><span class="gap-tag ${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'good':'bad'}">${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'高于周边':'低于周边'}</span></td></tr>
-      <tr><td>来电量</td><td class="val-bad">${m.call.self}</td><td>${m.call.area}</td><td>${m.call.city}</td><td><span class="gap-tag bad">仅周边${callPct}%</span></td></tr>
-      <tr><td>点击→来电率</td><td class="${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'val-good':'val-bad'}">${d.callRate}%</td><td>${d.callRateArea}%</td><td>${d.callRateCity}%</td><td><span class="gap-tag ${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'good':'bad'}">${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'高于周边':'低于周边'}</span></td></tr>
-    </tbody>
-  </table>
-  <div class="quote-box"><strong>一句话结论：</strong>${conclusion}</div>
   ${storeDataImg}
+  ${hasDataForm ? `
+  <div style="margin-top:20px;">
+    <div style="font-size:13px;color:var(--gray-400);margin-bottom:8px;font-weight:600;">📊 数据对比（基于门店数据截图提取）</div>
+    <table class="data-table">
+      <thead><tr><th>指标</th><th>本店</th><th>周边均值</th><th>同城均值</th><th>差距</th></tr></thead>
+      <tbody>
+        <tr><td>曝光量</td><td class="val-bad">${fmt(m.exposure.self)}</td><td>${fmt(m.exposure.area)}</td><td>${fmt(m.exposure.city)}</td><td><span class="gap-tag bad">仅周边${expPct}%</span></td></tr>
+        <tr><td>点击量</td><td class="val-bad">${fmt(m.click.self)}</td><td>${fmt(m.click.area)}</td><td>${fmt(m.click.city)}</td><td><span class="gap-tag bad">仅周边${clkPct}%</span></td></tr>
+        <tr><td>曝光→点击率</td><td class="val-warn">${d.clickRate}%</td><td>${d.clickRateArea}%</td><td>${d.clickRateCity}%</td><td><span class="gap-tag ${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'good':'bad'}">${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'高于周边':'略低'}</span></td></tr>
+        <tr><td>导航量</td><td class="val-bad">${fmt(m.nav.self)}</td><td>${fmt(m.nav.area)}</td><td>${fmt(m.nav.city)}</td><td><span class="gap-tag bad">仅周边${navPct}%</span></td></tr>
+        <tr><td>点击→导航率</td><td class="${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'val-good':'val-bad'}">${d.navRate}%</td><td>${d.navRateArea}%</td><td>${d.navRateCity}%</td><td><span class="gap-tag ${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'good':'bad'}">${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'高于周边':'低于周边'}</span></td></tr>
+        <tr><td>来电量</td><td class="val-bad">${m.call.self}</td><td>${m.call.area}</td><td>${m.call.city}</td><td><span class="gap-tag bad">仅周边${callPct}%</span></td></tr>
+        <tr><td>点击→来电率</td><td class="${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'val-good':'val-bad'}">${d.callRate}%</td><td>${d.callRateArea}%</td><td>${d.callRateCity}%</td><td><span class="gap-tag ${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'good':'bad'}">${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'高于周边':'低于周边'}</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="quote-box"><strong>一句话结论：</strong>${conclusion}</div>
+  ` : `
+  <div class="quote-box"><strong>说明：</strong>经营数据详见上方截图。如填写数据对比表，系统将自动生成量化分析和差距计算。</div>
+  `}
 </section>
 
 <!-- Part 2: 页面诊断 -->
 <section class="section">
   <h2 class="section-title"><span class="icon">🔍</span>二、页面诊断 — 五要素分析</h2>
-  ${searchImg ? `
+
   <div class="diag-el">
     <div class="diag-el-head"><span class="num">1</span>要素一：头图/封面 → 影响「点击率」</div>
     <div class="diag-el-body">
-      <div class="finding"><div class="f-label">📸 搜索列表页截图</div><div class="f-text">结合截图分析：头图辨识度、差异化标识是否突出、与周边门店对比的视觉竞争力。</div></div>
+      <div class="finding"><div class="f-text">以下为搜索列表页实拍截图，可对比本店与周边门店的头图辨识度、差异化标识、V级徽章等视觉竞争力。</div></div>
       ${searchImg}
-      <div class="data-tag">曝光→点击率 ${d.clickRate}% vs 周边 ${d.clickRateArea}% vs 同城 ${d.clickRateCity}%</div>
+      ${hasDataForm ? `<div class="data-tag">曝光→点击率 ${d.clickRate}% vs 周边 ${d.clickRateArea}% vs 同城 ${d.clickRateCity}%</div>` : ''}
     </div>
-  </div>` : ''}
-  ${detailImgs ? `
+  </div>
+
   <div class="diag-el">
     <div class="diag-el-head"><span class="num">2</span>要素二：门店名称与标签 → 影响「搜索排名」</div>
     <div class="diag-el-body">
-      <div class="finding"><div class="f-label">📸 门店详情页截图</div><div class="f-text">结合截图分析：标题与实际是否一致、标签覆盖是否全面、V等级和营业状态展示。</div></div>
+      <div class="finding"><div class="f-text">以下为门店详情页实拍截图，重点检查：标题与实际是否一致、标签覆盖是否全面、V等级和营业状态展示。</div></div>
       ${detailImgs}
     </div>
   </div>
+
   <div class="diag-el">
     <div class="diag-el-head"><span class="num">3</span>要素三：评价与评分 → 影响「信任感/导航率」</div>
     <div class="diag-el-body">
-      <div class="finding"><div class="f-label">当前评价${d.reviews}条</div><div class="f-text">评价数量是否足够建立信任？最新评价时间？评价质量如何？</div></div>
+      <div class="finding"><div class="f-label">当前评价${d.reviews}条${parseInt(d.reviews)===0 || d.reviews==='0' ? '，信任背书缺失' : ''}</div><div class="f-text">评价数量是否足够建立信任？最新评价时间？评价质量如何？周边合作门店通常有100+到访记录和大量真实评价。</div></div>
       <div class="data-tag">评价 ${d.reviews}条 vs 周边竞品 100+到访记录</div>
     </div>
   </div>
+
   <div class="diag-el">
     <div class="diag-el-head"><span class="num">4</span>要素四：团购与优惠 → 影响「到店动机」</div>
     <div class="diag-el-body">
-      <div class="finding"><div class="f-label">当前团购${d.deals}个</div><div class="f-text">${parseInt(d.deals)===0?'没有团购项目，客户缺少到店理由。对比周边门店均有团购套餐。':'有团购项目，检查价格竞争力和套餐吸引力。'}</div></div>
-      <div class="data-tag">博雅 ${d.deals}团购 vs 周边门店均有团购</div>
+      <div class="finding"><div class="f-label">当前团购${d.deals}个</div><div class="f-text">${parseInt(d.deals)===0?'没有团购项目，客户缺少到店理由。对比周边门店均有团购套餐（¥154-358），差距明显。':'有团购项目，需检查价格竞争力和套餐吸引力，对标周边门店团购方案。'}</div></div>
+      <div class="data-tag">${storeName} ${d.deals}个团购 vs 周边门店均有团购</div>
     </div>
   </div>
+
   <div class="diag-el">
     <div class="diag-el-head"><span class="num">5</span>要素五：营业时间与联系方式 → 影响「来电率/导航率」</div>
     <div class="diag-el-body">
-      <div class="finding"><div class="f-label">营业时间与标题一致性检查</div><div class="f-text">门店标题是否标注了"24h"但营业时间并非24小时？这是最常见的信任矛盾。</div></div>
-      <div class="data-tag">点击→导航 ${d.navRate}% · 点击→来电 ${d.callRate}%</div>
+      <div class="finding"><div class="f-label">营业时间与标题一致性检查</div><div class="f-text">门店标题是否标注了"24h"但营业时间并非24小时？这是最常见的信任矛盾——急诊客户看到"已休息"会直接选其他店。</div></div>
+      ${hasDataForm ? `<div class="data-tag">点击→导航 ${d.navRate}% · 点击→来电 ${d.callRate}%</div>` : ''}
     </div>
-  </div>` : ''}
+  </div>
 </section>
 
 <!-- Part 3: 周边合作门店对比 -->
