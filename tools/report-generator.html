@@ -802,7 +802,69 @@ const uploadedImages = {
   'store-detail': []
 };
 
-let reportHistory = JSON.parse(localStorage.getItem('reportHistory') || '[]');
+// IndexedDB for persistent report storage
+const DB_NAME = 'DiagnosticReportsDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'reports';
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const idb = e.target.result;
+      if (!idb.objectStoreNames.contains(STORE_NAME)) {
+        const store = idb.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('date', 'date', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function saveReportToDB(report) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(report);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function getAllReportsFromDB() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function deleteReportFromDB(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+let reportHistory = [];
+
+// Init DB and load history
+(async function initHistory() {
+  try {
+    await openDB();
+    reportHistory = await getAllReportsFromDB();
+    // Sort by date descending
+    reportHistory.sort((a, b) => b.timestamp - a.timestamp);
+    renderHistory();
+  } catch (e) {
+    console.error('DB init error:', e);
+    reportHistory = [];
+  }
+})();
 
 // Tab switching
 function switchTab(tab) {
@@ -963,19 +1025,20 @@ function generateReport() {
   document.getElementById('progressFill').style.width = '100%';
   document.getElementById('progressText').textContent = '生成完成！';
   
-  // Save to history
+  // Save to IndexedDB
   const historyItem = {
     id: reportId,
     storeName: '待确认',
-    fileName: '待确认',
     date: dateStr,
-    images: { ...uploadedImages, 'store-detail': [...uploadedImages['store-detail']] },
-    url: reportUrl,
+    timestamp: Date.now(),
+    html: reportHtml,
     status: 'local'
   };
   
   reportHistory.unshift(historyItem);
-  localStorage.setItem('reportHistory', JSON.stringify(reportHistory));
+  saveReportToDB(historyItem).then(() => {
+    console.log('Report saved to IndexedDB:', reportId);
+  }).catch(e => console.error('Save error:', e));
   
   // Short delay then show result card
   setTimeout(() => {
@@ -1092,7 +1155,7 @@ function renderHistory(filter) {
   const list = document.getElementById('historyList');
   let items = reportHistory;
   if (filter) {
-    items = items.filter(item => item.storeName.toLowerCase().includes(filter.toLowerCase()));
+    items = items.filter(item => (item.storeName || '').toLowerCase().includes(filter.toLowerCase()));
   }
   
   if (!items.length) {
@@ -1105,14 +1168,15 @@ function renderHistory(filter) {
     return;
   }
   
-  list.innerHTML = items.map(item => `
+  list.innerHTML = items.map((item, idx) => `
     <div class="history-item">
       <div class="history-item-info">
-        <div class="history-item-name">${item.storeName}</div>
-        <div class="history-item-date">${item.date}${item.url ? ' · <a href="' + item.url + '" target="_blank" style="color:var(--brand)">查看链接</a>' : ''}</div>
+        <div class="history-item-name">${item.storeName || '未命名报告'}</div>
+        <div class="history-item-date">${item.date}</div>
       </div>
       <div class="history-item-actions">
-        ${item.url ? '<button class="history-action-btn primary" onclick="copyText(\'' + item.url + '\')">复制链接</button>' : '<button class="history-action-btn" disabled style="opacity:0.5;cursor:not-allowed;">链接生成中</button>'}
+        <button class="history-action-btn primary" onclick="viewReport('${item.id}')">查看报告</button>
+        <button class="history-action-btn" onclick="deleteReport('${item.id}')" style="color:#E54D4D;">删除</button>
       </div>
     </div>
   `).join('');
@@ -1121,6 +1185,31 @@ function renderHistory(filter) {
 function filterHistory() {
   const q = document.getElementById('historySearch').value.trim();
   renderHistory(q);
+}
+
+// View a stored report from IndexedDB
+function viewReport(id) {
+  const item = reportHistory.find(r => r.id === id);
+  if (!item || !item.html) {
+    showToast('报告内容不存在，可能已过期');
+    return;
+  }
+  const blob = new Blob([item.html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+// Delete a report from history
+async function deleteReport(id) {
+  if (!confirm('确定删除这条记录？')) return;
+  try {
+    await deleteReportFromDB(id);
+    reportHistory = reportHistory.filter(r => r.id !== id);
+    renderHistory();
+    showToast('已删除');
+  } catch (e) {
+    showToast('删除失败');
+  }
 }
 
 function copyText(text) {
@@ -1135,8 +1224,7 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-// Init
-renderHistory();
+// Init: DB handles history loading and rendering
 </script>
 
 </body>
