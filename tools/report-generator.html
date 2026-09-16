@@ -625,6 +625,119 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Quick Data Entry Modal */
+.quick-data-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 10001;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+.quick-data-modal-overlay.active {
+  display: flex;
+}
+.quick-data-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.quick-data-modal .qdm-header {
+  background: linear-gradient(135deg, #2F6BFF, #1B4FCC);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: 16px 16px 0 0;
+}
+.quick-data-modal .qdm-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.quick-data-modal .qdm-header p {
+  font-size: 13px;
+  opacity: 0.85;
+}
+.quick-data-modal .qdm-body {
+  padding: 20px 24px;
+}
+.quick-data-modal .qdm-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #637089;
+  margin-bottom: 10px;
+  margin-top: 16px;
+}
+.quick-data-modal .qdm-section-title:first-child {
+  margin-top: 0;
+}
+.quick-data-modal .qdm-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.quick-data-modal .qdm-field {
+  flex: 1;
+}
+.quick-data-modal .qdm-field label {
+  display: block;
+  font-size: 12px;
+  color: #637089;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.quick-data-modal .qdm-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #E6EAF2;
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.quick-data-modal .qdm-field input:focus {
+  border-color: #2F6BFF;
+}
+.quick-data-modal .qdm-field input.filled {
+  background: #F0F9EB;
+  border-color: #16A37B;
+}
+.quick-data-modal .qdm-hint {
+  font-size: 12px;
+  color: #9CA8BE;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.quick-data-modal .qdm-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #E6EAF2;
+  display: flex;
+  gap: 10px;
+}
+.quick-data-modal .qdm-footer button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+.quick-data-modal .qdm-footer .qdm-btn-cancel {
+  background: #F0F3F8;
+  color: #637089;
+}
+.quick-data-modal .qdm-footer .qdm-btn-confirm {
+  background: #2F6BFF;
+  color: #fff;
+}
+
 /* Report Viewer Overlay */
 .report-viewer-overlay {
   display: none;
@@ -1326,6 +1439,90 @@ function generateReport() {
   if (!uploadedImages['search-page']) { showToast('请上传搜索页截图'); return; }
   if (!uploadedImages['store-detail'].length) { showToast('请上传门店详情截图'); return; }
 
+  // Check if data is filled - if not, show quick data entry modal
+  const selfExp = parseFloat((document.getElementById('m_exposure_self')?.value || '').replace(/,/g,'')) || 0;
+  if (selfExp === 0) {
+    showQuickDataModal();
+    return;
+  }
+
+  doGenerateReport();
+}
+
+// Quick Data Modal functions
+function showQuickDataModal() {
+  // Pre-fill from any existing form values (from partial OCR)
+  const fieldMap = {
+    'qdm_exp': 'm_exposure_self', 'qdm_clk': 'm_click_self', 'qdm_nav': 'm_nav_self', 'qdm_call': 'm_call_self',
+    'qdm_exp_area': 'm_exposure_area', 'qdm_clk_area': 'm_click_area', 'qdm_nav_area': 'm_nav_area', 'qdm_call_area': 'm_call_area',
+    'qdm_exp_city': 'm_exposure_city', 'qdm_clk_city': 'm_click_city', 'qdm_nav_city': 'm_nav_city', 'qdm_call_city': 'm_call_city',
+    'qdm_reviews': 'inputReviews', 'qdm_deals': 'inputDeals'
+  };
+  for (const [modalId, formId] of Object.entries(fieldMap)) {
+    const formVal = document.getElementById(formId)?.value || '';
+    const modalInput = document.getElementById(modalId);
+    if (modalInput) {
+      modalInput.value = formVal;
+      modalInput.classList.toggle('filled', !!formVal && parseFloat(formVal) > 0);
+    }
+  }
+  
+  // Highlight required fields that are empty
+  ['qdm_exp','qdm_clk','qdm_nav','qdm_call'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && (!el.value || parseFloat(el.value) === 0)) {
+      el.style.borderColor = '#EF4444';
+    }
+  });
+  
+  document.getElementById('quickDataModalOverlay').classList.add('active');
+}
+
+function closeQuickDataModal() {
+  document.getElementById('quickDataModalOverlay').classList.remove('active');
+}
+
+function confirmQuickData() {
+  // Validate required fields
+  const required = ['qdm_exp','qdm_clk','qdm_nav','qdm_call'];
+  let allFilled = true;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    const val = parseFloat(el.value) || 0;
+    if (val === 0) {
+      el.style.borderColor = '#EF4444';
+      el.style.background = '#FEF2F2';
+      allFilled = false;
+    }
+  });
+  
+  if (!allFilled) {
+    showToast('⚠️ 本店4项数据（曝光/点击/导航/来电）必须填写');
+    return;
+  }
+  
+  // Transfer modal values to form
+  const fieldMap = {
+    'qdm_exp': 'm_exposure_self', 'qdm_clk': 'm_click_self', 'qdm_nav': 'm_nav_self', 'qdm_call': 'm_call_self',
+    'qdm_exp_area': 'm_exposure_area', 'qdm_clk_area': 'm_click_area', 'qdm_nav_area': 'm_nav_area', 'qdm_call_area': 'm_call_area',
+    'qdm_exp_city': 'm_exposure_city', 'qdm_clk_city': 'm_click_city', 'qdm_nav_city': 'm_nav_city', 'qdm_call_city': 'm_call_city',
+    'qdm_reviews': 'inputReviews', 'qdm_deals': 'inputDeals'
+  };
+  for (const [modalId, formId] of Object.entries(fieldMap)) {
+    const modalVal = document.getElementById(modalId)?.value || '';
+    const formEl = document.getElementById(formId);
+    if (formEl && modalVal) {
+      formEl.value = modalVal;
+    }
+  }
+  
+  // Close modal and generate
+  closeQuickDataModal();
+  showToast('✅ 数据已填入，正在生成报告...');
+  setTimeout(() => doGenerateReport(), 300);
+}
+
+function doGenerateReport() {
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
 
@@ -2005,6 +2202,20 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
+// Quick Data Modal - real-time input feedback
+document.querySelectorAll('.quick-data-modal input').forEach(input => {
+  input.addEventListener('input', function() {
+    const val = parseFloat(this.value) || 0;
+    if (val > 0) {
+      this.style.borderColor = '#16A37B';
+      this.style.background = '#F0F9EB';
+    } else {
+      this.style.borderColor = '';
+      this.style.background = '';
+    }
+  });
+});
+
 // Init: DB handles history loading and rendering
 </script>
 
@@ -2017,6 +2228,59 @@ function showToast(msg) {
   </div>
   <div class="report-viewer-content">
     <iframe id="reportViewerFrame"></iframe>
+  </div>
+</div>
+
+<!-- Quick Data Entry Modal -->
+<div class="quick-data-modal-overlay" id="quickDataModalOverlay">
+  <div class="quick-data-modal">
+    <div class="qdm-header">
+      <h3>📊 补充经营数据</h3>
+      <p>截图自动识别可能不准确，请对照截图手动填入关键数据</p>
+    </div>
+    <div class="qdm-body">
+      <div class="qdm-hint">💡 数据来自「门店数据截图」中的本店/周边/同城三列数字</div>
+      
+      <div class="qdm-section-title">🏠 本店数据（必填）</div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>曝光量</label><input type="number" id="qdm_exp" placeholder="如 4931" /></div>
+        <div class="qdm-field"><label>点击量</label><input type="number" id="qdm_clk" placeholder="如 162" /></div>
+      </div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>导航量</label><input type="number" id="qdm_nav" placeholder="如 68" /></div>
+        <div class="qdm-field"><label>来电量</label><input type="number" id="qdm_call" placeholder="如 15" /></div>
+      </div>
+      
+      <div class="qdm-section-title">📍 周边均值（选填，有则更准确）</div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>周边曝光</label><input type="number" id="qdm_exp_area" placeholder="如 81000" /></div>
+        <div class="qdm-field"><label>周边点击</label><input type="number" id="qdm_clk_area" placeholder="如 2898" /></div>
+      </div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>周边导航</label><input type="number" id="qdm_nav_area" placeholder="如 940" /></div>
+        <div class="qdm-field"><label>周边来电</label><input type="number" id="qdm_call_area" placeholder="如 226" /></div>
+      </div>
+      
+      <div class="qdm-section-title">🏙️ 同城均值（选填）</div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>同城曝光</label><input type="number" id="qdm_exp_city" placeholder="如 554000" /></div>
+        <div class="qdm-field"><label>同城点击</label><input type="number" id="qdm_clk_city" placeholder="如 21000" /></div>
+      </div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>同城导航</label><input type="number" id="qdm_nav_city" placeholder="如 7728" /></div>
+        <div class="qdm-field"><label>同城来电</label><input type="number" id="qdm_call_city" placeholder="如 1756" /></div>
+      </div>
+      
+      <div class="qdm-section-title">📋 其他（选填）</div>
+      <div class="qdm-row">
+        <div class="qdm-field"><label>评价数</label><input type="number" id="qdm_reviews" placeholder="如 23" /></div>
+        <div class="qdm-field"><label>团购数</label><input type="number" id="qdm_deals" placeholder="如 0" /></div>
+      </div>
+    </div>
+    <div class="qdm-footer">
+      <button class="qdm-btn-cancel" onclick="closeQuickDataModal()">取消</button>
+      <button class="qdm-btn-confirm" onclick="confirmQuickData()">确认并生成报告</button>
+    </div>
   </div>
 </div>
 
