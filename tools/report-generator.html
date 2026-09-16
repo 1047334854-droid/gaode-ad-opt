@@ -759,16 +759,18 @@ body {
           <div style="font-size:13px;color:var(--text-secondary);margin-top:2px;" id="resultSubtitle"></div>
         </div>
       </div>
+      <div style="text-align:center;margin:16px 0;">
+        <button id="previewBtn" style="display:none;background:#2F6BFF;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;">📄 预览诊断报告</button>
+      </div>
       <div class="result-links">
-        <div class="result-link-row">
-          <span class="result-link-label">预览链接</span>
-          <span class="result-link-url" id="previewUrl">-</span>
-          <button class="copy-btn" onclick="copyUrl('previewUrl')">复制</button>
-        </div>
         <div class="result-link-row">
           <span class="result-link-label">报告名称</span>
           <span class="result-link-url" id="reportName" style="color:var(--text-primary)">-</span>
           <button class="copy-btn" onclick="copyUrl('reportName')">复制</button>
+        </div>
+        <div class="result-link-row">
+          <span class="result-link-label">在线链接</span>
+          <span class="result-link-url" id="previewUrl">-</span>
         </div>
       </div>
     </div>
@@ -968,6 +970,13 @@ function finishGenerate() {
   
   const reportId = 'report_' + Date.now();
   
+  // Generate report HTML with uploaded images
+  const reportHtml = generateReportHtml(uploadedImages, dateStr);
+  
+  // Open report in new tab
+  const blob = new Blob([reportHtml], { type: 'text/html' });
+  const reportUrl = URL.createObjectURL(blob);
+  
   // Save to history
   const historyItem = {
     id: reportId,
@@ -975,8 +984,8 @@ function finishGenerate() {
     fileName: '待确认',
     date: dateStr,
     images: { ...uploadedImages, 'store-detail': [...uploadedImages['store-detail']] },
-    url: null,
-    status: 'pending'
+    url: reportUrl,
+    status: 'local'
   };
   
   reportHistory.unshift(historyItem);
@@ -985,14 +994,89 @@ function finishGenerate() {
   // Show result
   document.getElementById('progressBar').classList.remove('active');
   document.getElementById('resultCard').classList.add('active');
-  document.getElementById('resultTitle').textContent = '截图已接收';
-  document.getElementById('resultSubtitle').textContent = '提交时间：' + dateStr;
-  document.getElementById('reportName').textContent = '请发送截图到群里 @北辰';
-  document.getElementById('previewUrl').textContent = '发送截图后，我将自动生成诊断报告并返回微信可打开的链接';
+  document.getElementById('resultTitle').textContent = '诊断报告已生成';
+  document.getElementById('resultSubtitle').textContent = '生成时间：' + dateStr;
+  document.getElementById('reportName').textContent = '诊断报告预览';
+  document.getElementById('previewUrl').textContent = '点击预览报告，或发送到群里由北辰生成在线链接';
+  
+  // Update preview button
+  const previewBtn = document.getElementById('previewBtn');
+  previewBtn.style.display = 'inline-block';
+  previewBtn.onclick = () => window.open(reportUrl, '_blank');
   
   document.getElementById('generateBtn').disabled = false;
   
-  showToast('截图已接收！请发到群里 @北辰');
+  showToast('报告已生成！可预览或发到群里获取在线链接');
+}
+
+function generateReportHtml(images, dateStr) {
+  // Convert images to base64 data URLs
+  function imgToBase64(imgData) {
+    return imgData || '';
+  }
+  
+  let storeDetailHtml = '';
+  if (images['store-detail'] && images['store-detail'].length > 0) {
+    storeDetailHtml = images['store-detail'].map(img => 
+      `<img src="${img}" style="max-width:100%;border-radius:8px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">`
+    ).join('');
+  }
+  
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门店诊断报告</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, "PingFang SC", sans-serif; background: #F6F8FB; color: #152033; line-height: 1.6; padding: 16px; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 22px; margin-bottom: 16px; color: #2F6BFF; }
+h2 { font-size: 18px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #EBF1FF; color: #152033; }
+h3 { font-size: 15px; margin: 16px 0 8px; color: #637089; }
+.card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+img { max-width: 100%; border-radius: 8px; }
+.meta { color: #637089; font-size: 13px; margin-bottom: 20px; }
+.footer { text-align: center; color: #9CA8BE; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #E6EAF2; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📊 门店诊断报告</h1>
+<div class="meta">生成时间：${dateStr}</div>
+
+<div class="card">
+<h2>📈 一、经营数据现状</h2>
+<h3>门店数据截图</h3>
+${images['store-data'] ? `<img src="${images['store-data']}" style="max-width:100%;">` : ''}
+</div>
+
+<div class="card">
+<h2>🏪 二、周边合作门店对比</h2>
+<h3>周边合作门店数据</h3>
+${images['partner-data'] ? `<img src="${images['partner-data']}" style="max-width:100%;">` : ''}
+</div>
+
+<div class="card">
+<h2>🔍 三、搜索页面分析</h2>
+<h3>搜索页截图</h3>
+${images['search-page'] ? `<img src="${images['search-page']}" style="max-width:100%;">` : ''}
+</div>
+
+<div class="card">
+<h2>📱 四、门店详情页诊断</h2>
+<h3>门店详情截图</h3>
+${storeDetailHtml}
+</div>
+
+<div class="footer">
+<p>此报告由诊断报告生成器自动生成</p>
+<p>如需完整诊断分析，请发送截图到群里 @北辰</p>
+</div>
+</div>
+</body>
+</html>`;
 }
 
 // Copy URL
