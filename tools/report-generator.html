@@ -1127,122 +1127,203 @@ function handleSingleUpload(key, input) {
     uploadedImages[key] = e.target.result;
     updateZone(key, e.target.result);
     
-    // Auto-detect store name from store-data image
+    // Auto-detect store name + extract data from store-data image
     if (key === 'store-data') {
-      detectStoreName(e.target.result);
+      ocrExtractWithRetry(e.target.result);
     }
   };
   reader.readAsDataURL(file);
 }
 
-// Auto-detect store name + extract metrics using Tesseract.js OCR
-async function detectStoreName(imageData) {
+// === Image Preprocessing for better OCR ===
+function preprocessImage(imageData, options = {}) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      // Resize for better OCR (target width ~1500px)
+      const targetWidth = options.width || 1500;
+      const scale = Math.min(targetWidth / img.width, 2);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Get pixel data for processing
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Convert to grayscale
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+        data[i] = data[i+1] = data[i+2] = gray;
+      }
+      
+      // Apply contrast enhancement
+      const contrast = options.contrast || 1.5;
+      const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100));
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.max(0, Math.min(255, factor * (data[i] - 128) + 128));
+        data[i+1] = Math.max(0, Math.min(255, factor * (data[i+1] - 128) + 128));
+        data[i+2] = Math.max(0, Math.min(255, factor * (data[i+2] - 128) + 128));
+      }
+      
+      // Apply threshold if requested (binary black & white)
+      if (options.threshold) {
+        const thresh = options.threshold;
+        for (let i = 0; i < data.length; i += 4) {
+          const v = data[i] > thresh ? 255 : 0;
+          data[i] = data[i+1] = data[i+2] = v;
+        }
+      }
+      
+      // Apply invert if requested (white text on dark bg → black text on white bg)
+      if (options.invert) {
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = 255 - data[i];
+          data[i+1] = 255 - data[i+1];
+          data[i+2] = 255 - data[i+2];
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = imageData;
+  });
+}
+
+// === OCR with automatic retry ===
+let ocrDataExtracted = false; // Track if OCR successfully got data
+
+async function ocrExtractWithRetry(imageData) {
   const nameInput = document.getElementById('storeNameInput');
   const statusEl = document.getElementById('ocrStatus');
   
-  statusEl.textContent = '🔍 识别中...';
-  statusEl.style.color = 'var(--warning)';
+  ocrDataExtracted = false;
   nameInput.value = '';
   
-  try {
-    const result = await Tesseract.recognize(imageData, 'chi_sim+eng', {
-      logger: () => {}
-    });
+  // Try multiple approaches in order of aggressiveness
+  const attempts = [
+    { name: '原始图片', preprocess: null },
+    { name: '高对比度', preprocess: { contrast: 2.0 } },
+    { name: '二值化(阈值140)', preprocess: { contrast: 2.0, threshold: 140 } },
+    { name: '二值化(阈值120)', preprocess: { contrast: 2.5, threshold: 120 } },
+    { name: '反色+二值化', preprocess: { contrast: 2.0, threshold: 140, invert: true } },
+  ];
+  
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
+    statusEl.textContent = `🔍 识别中（第${i+1}次/${attempt.name}）...`;
+    statusEl.style.color = 'var(--warning)';
     
-    const text = result.data.text;
-    console.log('OCR full text:', text);
-    
-    // === 1. Extract store name ===
-    const lines = text.split('\n').filter(l => l.trim().length > 0);
-    let storeName = '';
-    
-    const namePatterns = [
-      /([\u4e00-\u9fa5a-zA-Z]+(?:宠物|动物|兽医|宠物医院|动物医院|诊所|诊疗)[\u4e00-\u9fa5a-zA-Z]*)/i,
-      /([\u4e00-\u9fa5]{2,15}(?:医院|诊所|门诊))/,
-    ];
-    
-    for (let i = 0; i < Math.min(lines.length, 5); i++) {
-      const line = lines[i].trim();
-      for (const pat of namePatterns) {
-        const m = line.match(pat);
-        if (m) { storeName = m[1]; break; }
+    try {
+      let ocrInput = imageData;
+      if (attempt.preprocess) {
+        ocrInput = await preprocessImage(imageData, attempt.preprocess);
       }
-      if (storeName) break;
-    }
-    
-    if (!storeName) {
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.length >= 2 && trimmed.length <= 30 && !/^[\d\s\-\.]+$/.test(trimmed)) {
-          storeName = trimmed;
-          break;
-        }
+      
+      const result = await Tesseract.recognize(ocrInput, 'chi_sim+eng', {
+        logger: () => {}
+      });
+      
+      const text = result.data.text;
+      console.log(`OCR attempt ${i+1} (${attempt.name}) text:`, text);
+      
+      // Try to extract metrics
+      const extracted = extractMetricsFromText(text);
+      
+      // Check if we got at least the core self metrics
+      const hasSelfData = extracted.exposure_self > 0 || extracted.click_self > 0;
+      
+      if (hasSelfData) {
+        console.log(`✅ OCR succeeded on attempt ${i+1} (${attempt.name})`);
+        
+        // Also extract store name
+        const storeName = extractStoreNameFromText(text);
+        if (storeName) nameInput.value = storeName;
+        
+        // Fill all extracted data into form
+        fillFormFromExtractedData(extracted);
+        ocrDataExtracted = true;
+        
+        statusEl.textContent = `✅ 识别成功（${attempt.name}）- 已提取数据`;
+        statusEl.style.color = 'var(--success)';
+        return;
       }
+    } catch (e) {
+      console.error(`OCR attempt ${i+1} error:`, e);
     }
-    
-    if (storeName) {
-      nameInput.value = storeName;
-    }
-    
-    // === 2. Extract metrics from OCR text ===
-    const extracted = extractMetricsFromText(text);
-    let filledCount = 0;
-    
-    // Fill metric fields
-    const fieldMap = {
-      'exposure_self': 'm_exposure_self', 'exposure_area': 'm_exposure_area', 'exposure_city': 'm_exposure_city',
-      'click_self': 'm_click_self', 'click_area': 'm_click_area', 'click_city': 'm_click_city',
-      'nav_self': 'm_nav_self', 'nav_area': 'm_nav_area', 'nav_city': 'm_nav_city',
-      'call_self': 'm_call_self', 'call_area': 'm_call_area', 'call_city': 'm_call_city'
-    };
-    
-    for (const [key, fieldId] of Object.entries(fieldMap)) {
-      if (extracted[key] && extracted[key] > 0) {
-        const el = document.getElementById(fieldId);
-        if (el) {
-          el.value = extracted[key];
-          el.style.background = '#F0F9EB'; // highlight filled fields
-          el.style.borderColor = 'var(--success)';
-          filledCount++;
-          // Clear highlight after 3s
-          setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 3000);
-        }
-      }
-    }
-    
-    // Also try to extract reviews and deals
-    if (extracted.reviews) {
-      const revEl = document.getElementById('inputReviews');
-      if (revEl && !revEl.value) { revEl.value = extracted.reviews; filledCount++; }
-    }
-    if (extracted.deals !== undefined && extracted.deals !== null) {
-      const dealEl = document.getElementById('inputDeals');
-      if (dealEl && !dealEl.value) { dealEl.value = extracted.deals; filledCount++; }
-    }
-    
-    // === 3. Update status ===
-    const nameOk = !!storeName;
-    const dataOk = filledCount > 0;
-    
-    if (nameOk && dataOk) {
-      statusEl.textContent = `✅ 已识别门店名+${filledCount}项数据`;
-      statusEl.style.color = 'var(--success)';
-    } else if (dataOk) {
-      statusEl.textContent = `✅ 已识别${filledCount}项数据` + (nameOk ? '' : '（门店名未识别）');
-      statusEl.style.color = 'var(--success)';
-    } else if (nameOk) {
-      statusEl.textContent = '✅ 已识别门店名（数据未识别，请手动补充）';
-      statusEl.style.color = 'var(--warning)';
-    } else {
-      statusEl.textContent = '⚠️ 未识别，请手动输入';
-      statusEl.style.color = 'var(--danger, #E54D4D)';
-    }
-    
-  } catch (e) {
-    console.error('OCR error:', e);
-    statusEl.textContent = '❌ 识别失败，请手动输入';
-    statusEl.style.color = 'var(--danger, #E54D4D)';
   }
+  
+  // All attempts failed
+  statusEl.textContent = '❌ 多次识别均未获取到数据，请检查截图是否包含经营数据';
+  statusEl.style.color = 'var(--danger, #E54D4D)';
+}
+
+// Extract store name from OCR text
+function extractStoreNameFromText(text) {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  
+  const namePatterns = [
+    /([\u4e00-\u9fa5a-zA-Z]+(?:宠物|动物|兽医|宠物医院|动物医院|诊所|诊疗)[\u4e00-\u9fa5a-zA-Z]*)/i,
+    /([\u4e00-\u9fa5]{2,15}(?:医院|诊所|门诊))/,
+  ];
+  
+  for (let i = 0; i < Math.min(lines.length, 5); i++) {
+    const line = lines[i].trim();
+    for (const pat of namePatterns) {
+      const m = line.match(pat);
+      if (m) return m[1];
+    }
+  }
+  
+  // Fallback: first non-number line
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.length >= 2 && trimmed.length <= 30 && !/^[\d\s\-\.]+$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  return '';
+}
+
+// Fill form fields from extracted OCR data
+function fillFormFromExtractedData(extracted) {
+  let filledCount = 0;
+  
+  const fieldMap = {
+    'exposure_self': 'm_exposure_self', 'exposure_area': 'm_exposure_area', 'exposure_city': 'm_exposure_city',
+    'click_self': 'm_click_self', 'click_area': 'm_click_area', 'click_city': 'm_click_city',
+    'nav_self': 'm_nav_self', 'nav_area': 'm_nav_area', 'nav_city': 'm_nav_city',
+    'call_self': 'm_call_self', 'call_area': 'm_call_area', 'call_city': 'm_call_city'
+  };
+  
+  for (const [key, fieldId] of Object.entries(fieldMap)) {
+    if (extracted[key] && extracted[key] > 0) {
+      const el = document.getElementById(fieldId);
+      if (el) {
+        el.value = extracted[key];
+        el.style.background = '#F0F9EB';
+        el.style.borderColor = 'var(--success)';
+        filledCount++;
+        setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 5000);
+      }
+    }
+  }
+  
+  // Reviews and deals
+  if (extracted.reviews) {
+    const revEl = document.getElementById('inputReviews');
+    if (revEl && !revEl.value) { revEl.value = extracted.reviews; filledCount++; }
+  }
+  if (extracted.deals !== undefined && extracted.deals !== null) {
+    const dealEl = document.getElementById('inputDeals');
+    if (dealEl && !dealEl.value) { dealEl.value = extracted.deals; filledCount++; }
+  }
+  
+  return filledCount;
 }
 
 // Extract metrics from OCR text
@@ -1439,14 +1520,44 @@ function generateReport() {
   if (!uploadedImages['search-page']) { showToast('请上传搜索页截图'); return; }
   if (!uploadedImages['store-detail'].length) { showToast('请上传门店详情截图'); return; }
 
-  // Check if data is filled - if not, show quick data entry modal
+  // Check if data is already filled
   const selfExp = parseFloat((document.getElementById('m_exposure_self')?.value || '').replace(/,/g,'')) || 0;
-  if (selfExp === 0) {
-    showQuickDataModal();
+  if (selfExp > 0) {
+    doGenerateReport();
     return;
   }
 
-  doGenerateReport();
+  // Data not filled - try OCR again with retries
+  const btn = document.getElementById('generateBtn');
+  const statusEl = document.getElementById('ocrStatus');
+  btn.disabled = true;
+  btn.textContent = '🔄 正在识别数据...';
+  statusEl.textContent = '🔄 数据未识别，正在重新识别...';
+  statusEl.style.color = 'var(--warning)';
+
+  // Run OCR with retries
+  ocrExtractWithRetry(uploadedImages['store-data']).then(() => {
+    // Check if OCR succeeded
+    const expAfter = parseFloat((document.getElementById('m_exposure_self')?.value || '').replace(/,/g,'')) || 0;
+    
+    if (expAfter > 0) {
+      // OCR succeeded! Generate report
+      statusEl.textContent = '✅ 数据已识别，正在生成报告...';
+      statusEl.style.color = 'var(--success)';
+      btn.disabled = false;
+      btn.textContent = '生成诊断报告';
+      setTimeout(() => doGenerateReport(), 500);
+    } else {
+      // OCR failed - show quick data modal as last resort
+      btn.disabled = false;
+      btn.textContent = '生成诊断报告';
+      showQuickDataModal();
+    }
+  }).catch(() => {
+    btn.disabled = false;
+    btn.textContent = '生成诊断报告';
+    showQuickDataModal();
+  });
 }
 
 // Quick Data Modal functions
