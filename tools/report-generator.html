@@ -829,73 +829,124 @@ body {
       <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">💡 上传门店数据截图后自动识别门店名称，可手动修改</div>
     </div>
 
-    <!-- Upload Grid -->
-    <div class="upload-grid">
-      <!-- 门店数据 -->
+    <!-- Upload Grid - 7 distinct screenshots -->
+    <div class="upload-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+      <!-- 1. 门店经营数据 -->
       <div class="upload-card">
         <div class="upload-card-header">
           <div class="upload-card-icon blue">📊</div>
           <div>
-            <div class="upload-card-title">门店数据截图</div>
-            <div class="upload-card-desc">经营数据总览（1张）</div>
+            <div class="upload-card-title">① 门店经营数据</div>
+            <div class="upload-card-desc">高德后台经营数据总览（1张）</div>
           </div>
         </div>
         <div class="upload-zone" id="zone-store-data" onclick="document.getElementById('file-store-data').click()">
           <div class="upload-icon">📤</div>
-          <div class="upload-text">点击上传门店数据截图</div>
-          <div class="upload-hint">支持 JPG/PNG</div>
+          <div class="upload-text">点击上传经营数据截图</div>
+          <div class="upload-hint">含曝光/点击/导航/来电数据</div>
           <input type="file" id="file-store-data" accept="image/*" onchange="handleSingleUpload('store-data', this)" style="display:none" />
         </div>
       </div>
 
-      <!-- 周边合作门店 -->
-      <div class="upload-card">
-        <div class="upload-card-header">
-          <div class="upload-card-icon green">🏪</div>
-          <div>
-            <div class="upload-card-title">周边合作门店数据</div>
-            <div class="upload-card-desc">周边竞争门店截图（1张）</div>
-          </div>
-        </div>
-        <div class="upload-zone" id="zone-partner-data" onclick="document.getElementById('file-partner-data').click()">
-          <div class="upload-icon">📤</div>
-          <div class="upload-text">点击上传周边合作门店截图</div>
-          <div class="upload-hint">支持 JPG/PNG</div>
-          <input type="file" id="file-partner-data" accept="image/*" onchange="handleSingleUpload('partner-data', this)" style="display:none" />
-        </div>
-      </div>
-
-      <!-- 搜索页面 -->
+      <!-- 2. 搜索列表页 -->
       <div class="upload-card">
         <div class="upload-card-header">
           <div class="upload-card-icon orange">🔍</div>
           <div>
-            <div class="upload-card-title">周边搜索宠物医院界面</div>
-            <div class="upload-card-desc">搜索列表页截图（1张）</div>
+            <div class="upload-card-title">② 搜索列表页</div>
+            <div class="upload-card-desc">搜索"宠物医院"结果页（1张）</div>
           </div>
         </div>
         <div class="upload-zone" id="zone-search-page" onclick="document.getElementById('file-search-page').click()">
           <div class="upload-icon">📤</div>
-          <div class="upload-text">点击上传搜索页截图</div>
-          <div class="upload-hint">支持 JPG/PNG</div>
+          <div class="upload-text">点击上传搜索列表页截图</div>
+          <div class="upload-hint">用于要素一头图诊断+周边门店对比</div>
           <input type="file" id="file-search-page" accept="image/*" onchange="handleSingleUpload('search-page', this)" style="display:none" />
         </div>
       </div>
 
-      <!-- 门店详情页 -->
+      <!-- 3. 门店详情首页 -->
       <div class="upload-card">
         <div class="upload-card-header">
           <div class="upload-card-icon red">📱</div>
           <div>
-            <div class="upload-card-title">门店详情页面</div>
-            <div class="upload-card-desc">门店首页、评价、团购等（多张）</div>
+            <div class="upload-card-title">③ 门店详情首页</div>
+            <div class="upload-card-desc">门店名称+标签+营业状态（1张）</div>
           </div>
         </div>
-        <div class="upload-zone multi" id="zone-store-detail" onclick="document.getElementById('file-store-detail').click()">
+        <div class="upload-zone" id="zone-detail-main" onclick="document.getElementById('file-detail-main').click()">
           <div class="upload-icon">📤</div>
-          <div class="upload-text">点击上传门店详情截图</div>
-          <div class="upload-hint">支持多张 JPG/PNG</div>
-          <input type="file" id="file-store-detail" accept="image/*" multiple onchange="handleMultiUpload('store-detail', this)" style="display:none" />
+          <div class="upload-text">点击上传门店详情首页</div>
+          <div class="upload-hint">用于要素二：名称与标签诊断</div>
+          <input type="file" id="file-detail-main" accept="image/*" onchange="handleSingleUpload('detail-main', this)" style="display:none" />
+        </div>
+      </div>
+
+      <!-- 4. 评价页面 -->
+      <div class="upload-card">
+        <div class="upload-card-header">
+          <div class="upload-card-icon" style="background:#FEF3C7;color:#D97706;">⭐</div>
+          <div>
+            <div class="upload-card-title">④ 评价页面</div>
+            <div class="upload-card-desc">门店评价列表截图（1张）</div>
+          </div>
+        </div>
+        <div class="upload-zone" id="zone-detail-reviews" onclick="document.getElementById('file-detail-reviews').click()">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击上传评价页面截图</div>
+          <div class="upload-hint">用于要素三：评价诊断</div>
+          <input type="file" id="file-detail-reviews" accept="image/*" onchange="handleSingleUpload('detail-reviews', this)" style="display:none" />
+        </div>
+      </div>
+
+      <!-- 5. 团购页面 -->
+      <div class="upload-card">
+        <div class="upload-card-header">
+          <div class="upload-card-icon" style="background:#E8F8F3;color:#16A37B;">🎫</div>
+          <div>
+            <div class="upload-card-title">⑤ 团购页面</div>
+            <div class="upload-card-desc">门店团购/优惠列表截图（1张）</div>
+          </div>
+        </div>
+        <div class="upload-zone" id="zone-detail-deals" onclick="document.getElementById('file-detail-deals').click()">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击上传团购页面截图</div>
+          <div class="upload-hint">用于要素四：团购诊断</div>
+          <input type="file" id="file-detail-deals" accept="image/*" onchange="handleSingleUpload('detail-deals', this)" style="display:none" />
+        </div>
+      </div>
+
+      <!-- 6. 营业时间/联系方式 -->
+      <div class="upload-card">
+        <div class="upload-card-header">
+          <div class="upload-card-icon" style="background:#FEE2E2;color:#DC2626;">🕐</div>
+          <div>
+            <div class="upload-card-title">⑥ 营业时间页面</div>
+            <div class="upload-card-desc">营业时间+电话+预约入口（1张）</div>
+          </div>
+        </div>
+        <div class="upload-zone" id="zone-detail-hours" onclick="document.getElementById('file-detail-hours').click()">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击上传营业时间截图</div>
+          <div class="upload-hint">用于要素五：营业+联系方式诊断</div>
+          <input type="file" id="file-detail-hours" accept="image/*" onchange="handleSingleUpload('detail-hours', this)" style="display:none" />
+        </div>
+      </div>
+
+      <!-- 7. 合作案例（可选） -->
+      <div class="upload-card">
+        <div class="upload-card-header">
+          <div class="upload-card-icon" style="background:#E8EEFB;color:#1a56db;">🏆</div>
+          <div>
+            <div class="upload-card-title">⑦ 合作案例（可选）</div>
+            <div class="upload-card-desc">合作前后效果对比截图</div>
+          </div>
+        </div>
+        <div class="upload-zone" id="zone-case-study" onclick="document.getElementById('file-case-study').click()">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击上传合作案例截图</div>
+          <div class="upload-hint">选填，用于第四板块展示</div>
+          <input type="file" id="file-case-study" accept="image/*" onchange="handleSingleUpload('case-study', this)" style="display:none" />
         </div>
       </div>
     </div>
@@ -1036,12 +1087,15 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
-// State
+// State - 7 screenshot types
 const uploadedImages = {
-  'store-data': null,
-  'partner-data': null,
-  'search-page': null,
-  'store-detail': []
+  'store-data': null,      // ① 门店经营数据
+  'search-page': null,     // ② 搜索列表页（同时用于要素一+周边门店对比）
+  'detail-main': null,     // ③ 门店详情首页（要素二）
+  'detail-reviews': null,  // ④ 评价页面（要素三）
+  'detail-deals': null,    // ⑤ 团购页面（要素四）
+  'detail-hours': null,    // ⑥ 营业时间页面（要素五）
+  'case-study': null       // ⑦ 合作案例（第四板块，可选）
 };
 
 // IndexedDB for persistent report storage
@@ -1234,32 +1288,45 @@ async function ocrExtractWithRetry(imageData) {
       // Try to extract metrics
       const extracted = extractMetricsFromText(text);
       
-      // Check if we got at least the core self metrics
-      const hasSelfData = extracted.exposure_self > 0 || extracted.click_self > 0;
+      // Always fill whatever we found on each attempt (cumulative - don't overwrite existing)
+      fillFormFromExtractedData(extracted, true);
       
-      if (hasSelfData) {
-        console.log(`✅ OCR succeeded on attempt ${i+1} (${attempt.name})`);
-        
-        // Also extract store name
-        const storeName = extractStoreNameFromText(text);
-        if (storeName) nameInput.value = storeName;
-        
-        // Fill all extracted data into form
-        fillFormFromExtractedData(extracted);
+      // Also extract store name
+      const sn = extractStoreNameFromText(text);
+      if (sn && !nameInput.value) nameInput.value = sn;
+      
+      // Re-read current form state to check if all 4 are now filled
+      function curVal(id) { return parseFloat((document.getElementById(id)?.value || '').replace(/,/g,'')) || 0; }
+      const allFilled = curVal('m_exposure_self') > 0 && curVal('m_click_self') > 0 
+        && curVal('m_nav_self') > 0 && curVal('m_call_self') > 0;
+      
+      if (allFilled) {
+        console.log(`✅ OCR data complete after attempt ${i+1} (${attempt.name})`);
         ocrDataExtracted = true;
         
-        statusEl.textContent = `✅ 识别成功（${attempt.name}）- 已提取数据`;
+        statusEl.textContent = `✅ 识别成功（${attempt.name}）- 4项数据已完整提取`;
         statusEl.style.color = 'var(--success)';
         return;
+      } else {
+        console.log(`Attempt ${i+1} got partial data, continuing...`);
       }
     } catch (e) {
       console.error(`OCR attempt ${i+1} error:`, e);
     }
   }
   
-  // All attempts failed
-  statusEl.textContent = '❌ 多次识别均未获取到数据，请检查截图是否包含经营数据';
-  statusEl.style.color = 'var(--danger, #E54D4D)';
+  // All attempts done - check final state
+  function cv(id) { return parseFloat((document.getElementById(id)?.value || '').replace(/,/g,'')) || 0; }
+  const stillMissing = [];
+  if (cv('m_exposure_self') === 0) stillMissing.push('曝光量');
+  if (cv('m_click_self') === 0) stillMissing.push('点击量');
+  if (cv('m_nav_self') === 0) stillMissing.push('导航量');
+  if (cv('m_call_self') === 0) stillMissing.push('来电量');
+  
+  if (stillMissing.length > 0) {
+    statusEl.textContent = '❌ 自动识别不完整，仍缺：' + stillMissing.join('、') + '，请手动填写';
+    statusEl.style.color = 'var(--danger, #E54D4D)';
+  }
 }
 
 // Extract store name from OCR text
@@ -1290,7 +1357,7 @@ function extractStoreNameFromText(text) {
 }
 
 // Fill form fields from extracted OCR data
-function fillFormFromExtractedData(extracted) {
+function fillFormFromExtractedData(extracted, skipExisting = false) {
   let filledCount = 0;
   
   const fieldMap = {
@@ -1304,6 +1371,10 @@ function fillFormFromExtractedData(extracted) {
     if (extracted[key] && extracted[key] > 0) {
       const el = document.getElementById(fieldId);
       if (el) {
+        // Don't overwrite if field already has value (cumulative mode)
+        const existing = parseFloat((el.value || '').replace(/,/g,'')) || 0;
+        if (skipExisting && existing > 0) continue;
+        
         el.value = extracted[key];
         el.style.background = '#F0F9EB';
         el.style.borderColor = 'var(--success)';
@@ -1316,11 +1387,11 @@ function fillFormFromExtractedData(extracted) {
   // Reviews and deals
   if (extracted.reviews) {
     const revEl = document.getElementById('inputReviews');
-    if (revEl && !revEl.value) { revEl.value = extracted.reviews; filledCount++; }
+    if (revEl && !(skipExisting && revEl.value)) { revEl.value = extracted.reviews; filledCount++; }
   }
   if (extracted.deals !== undefined && extracted.deals !== null) {
     const dealEl = document.getElementById('inputDeals');
-    if (dealEl && !dealEl.value) { dealEl.value = extracted.deals; filledCount++; }
+    if (dealEl && !(skipExisting && dealEl.value)) { dealEl.value = extracted.deals; filledCount++; }
   }
   
   return filledCount;
@@ -1499,10 +1570,13 @@ function resetZone(key) {
   const zone = document.getElementById('zone-' + key);
   zone.classList.remove('has-image');
   const configs = {
-    'store-data': { icon: '📤', text: '点击上传门店数据截图', hint: '支持 JPG/PNG', multi: false },
-    'partner-data': { icon: '📤', text: '点击上传周边合作门店截图', hint: '支持 JPG/PNG', multi: false },
-    'search-page': { icon: '📤', text: '点击上传搜索页截图', hint: '支持 JPG/PNG', multi: false },
-    'store-detail': { icon: '📤', text: '点击上传门店详情截图', hint: '支持多张 JPG/PNG', multi: true }
+    'store-data': { icon: '📤', text: '点击上传经营数据截图', hint: '含曝光/点击/导航/来电数据', multi: false },
+    'search-page': { icon: '📤', text: '点击上传搜索列表页截图', hint: '用于要素一头图诊断+周边门店对比', multi: false },
+    'detail-main': { icon: '📤', text: '点击上传门店详情首页', hint: '用于要素二：名称与标签诊断', multi: false },
+    'detail-reviews': { icon: '📤', text: '点击上传评价页面截图', hint: '用于要素三：评价诊断', multi: false },
+    'detail-deals': { icon: '📤', text: '点击上传团购页面截图', hint: '用于要素四：团购诊断', multi: false },
+    'detail-hours': { icon: '📤', text: '点击上传营业时间截图', hint: '用于要素五：营业+联系方式诊断', multi: false },
+    'case-study': { icon: '📤', text: '点击上传合作案例截图', hint: '选填，用于第四板块展示', multi: false }
   };
   const c = configs[key];
   zone.innerHTML = `
@@ -1515,48 +1589,80 @@ function resetZone(key) {
 
 // Generate report
 function generateReport() {
-  if (!uploadedImages['store-data']) { showToast('请上传门店数据截图'); return; }
-  if (!uploadedImages['partner-data']) { showToast('请上传周边合作门店数据'); return; }
-  if (!uploadedImages['search-page']) { showToast('请上传搜索页截图'); return; }
-  if (!uploadedImages['store-detail'].length) { showToast('请上传门店详情截图'); return; }
+  // Required screenshots (case-study optional)
+  const requiredImages = [
+    ['store-data', '门店经营数据'],
+    ['search-page', '搜索列表页'],
+    ['detail-main', '门店详情首页'],
+    ['detail-reviews', '评价页面'],
+    ['detail-deals', '团购页面'],
+    ['detail-hours', '营业时间页面']
+  ];
+  for (const [key, label] of requiredImages) {
+    if (!uploadedImages[key]) { showToast('请上传' + label + '截图'); return; }
+  }
 
-  // Check if data is already filled
-  const selfExp = parseFloat((document.getElementById('m_exposure_self')?.value || '').replace(/,/g,'')) || 0;
-  if (selfExp > 0) {
+  // Check ALL 4 self metrics must be filled
+  function getVal(id) { return parseFloat((document.getElementById(id)?.value || '').replace(/,/g,'')) || 0; }
+  const selfMetrics = {
+    exp: getVal('m_exposure_self'),
+    clk: getVal('m_click_self'),
+    nav: getVal('m_nav_self'),
+    call: getVal('m_call_self')
+  };
+  const missingMetrics = [];
+  if (selfMetrics.exp === 0) missingMetrics.push('曝光量');
+  if (selfMetrics.clk === 0) missingMetrics.push('点击量');
+  if (selfMetrics.nav === 0) missingMetrics.push('导航量');
+  if (selfMetrics.call === 0) missingMetrics.push('来电量');
+
+  if (missingMetrics.length === 0) {
     doGenerateReport();
     return;
   }
 
-  // Data not filled - try OCR again with retries
+  // Data incomplete - retry OCR
   const btn = document.getElementById('generateBtn');
   const statusEl = document.getElementById('ocrStatus');
   btn.disabled = true;
   btn.textContent = '🔄 正在识别数据...';
-  statusEl.textContent = '🔄 数据未识别，正在重新识别...';
+  statusEl.textContent = '🔄 数据不完整（缺' + missingMetrics.join('、') + '），正在重新识别...';
   statusEl.style.color = 'var(--warning)';
 
-  // Run OCR with retries
   ocrExtractWithRetry(uploadedImages['store-data']).then(() => {
-    // Check if OCR succeeded
-    const expAfter = parseFloat((document.getElementById('m_exposure_self')?.value || '').replace(/,/g,'')) || 0;
-    
-    if (expAfter > 0) {
-      // OCR succeeded! Generate report
-      statusEl.textContent = '✅ 数据已识别，正在生成报告...';
+    // Re-check ALL 4 metrics after OCR retry
+    const after = {
+      exp: getVal('m_exposure_self'),
+      clk: getVal('m_click_self'),
+      nav: getVal('m_nav_self'),
+      call: getVal('m_call_self')
+    };
+    const stillMissing = [];
+    if (after.exp === 0) stillMissing.push('曝光量');
+    if (after.clk === 0) stillMissing.push('点击量');
+    if (after.nav === 0) stillMissing.push('导航量');
+    if (after.call === 0) stillMissing.push('来电量');
+
+    btn.disabled = false;
+    btn.textContent = '生成诊断报告';
+
+    if (stillMissing.length === 0) {
+      statusEl.textContent = '✅ 数据识别完整，正在生成报告...';
       statusEl.style.color = 'var(--success)';
-      btn.disabled = false;
-      btn.textContent = '生成诊断报告';
       setTimeout(() => doGenerateReport(), 500);
     } else {
-      // OCR failed - show quick data modal as last resort
-      btn.disabled = false;
-      btn.textContent = '生成诊断报告';
-      showQuickDataModal();
+      // OCR still incomplete - block report, ask user to manually fill
+      statusEl.textContent = '❌ 仍缺少：' + stillMissing.join('、') + '，请手动填写后再生成';
+      statusEl.style.color = 'var(--danger, #E54D4D)';
+      showToast('⚠️ 数据不完整（缺' + stillMissing.join('、') + '），请在下方数据表手动补全');
+      // Scroll to data table
+      document.getElementById('m_' + (stillMissing[0]==='曝光量'?'exposure':stillMissing[0]==='点击量'?'click':stillMissing[0]==='导航量'?'nav':'call') + '_self')?.focus();
+      document.querySelector('.upload-grid')?.scrollIntoView({behavior:'smooth', block:'start'});
     }
   }).catch(() => {
     btn.disabled = false;
     btn.textContent = '生成诊断报告';
-    showQuickDataModal();
+    showToast('⚠️ OCR识别失败，请在数据表中手动填写4项本店数据');
   });
 }
 
@@ -1817,13 +1923,14 @@ function generateReportHtml(images, dateStr, storeName) {
       </div>`;
   });
 
-  // Screenshots
+  // Screenshots - each report section gets its dedicated screenshot
   const searchImg = images['search-page'] ? `<div class="screenshot"><img src="${images['search-page']}" alt="搜索列表页截图"><div class="caption">图：搜索"宠物医院"结果页 · ${storeName} vs 周边门店</div></div>` : '';
-  const detailImgs = images['store-detail']?.length ? images['store-detail'].map((img, i) =>
-    `<div class="screenshot"><img src="${img}" alt="门店详情页截图${i+1}"><div class="caption">图：${storeName}门店首页 · 名称+标签+营业状态</div></div>`
-  ).join('') : '';
+  const detailMainImg = images['detail-main'] ? `<div class="screenshot"><img src="${images['detail-main']}" alt="门店详情首页"><div class="caption">图：${storeName}门店首页 · 名称+标签+营业状态</div></div>` : '';
+  const detailReviewsImg = images['detail-reviews'] ? `<div class="screenshot"><img src="${images['detail-reviews']}" alt="评价页面"><div class="caption">图：${storeName}评价列表</div></div>` : '';
+  const detailDealsImg = images['detail-deals'] ? `<div class="screenshot"><img src="${images['detail-deals']}" alt="团购页面"><div class="caption">图：${storeName}团购/优惠列表</div></div>` : '';
+  const detailHoursImg = images['detail-hours'] ? `<div class="screenshot"><img src="${images['detail-hours']}" alt="营业时间页面"><div class="caption">图：${storeName}营业时间+联系方式</div></div>` : '';
   const storeDataImg = images['store-data'] ? `<div class="screenshot"><img src="${images['store-data']}" alt="经营数据截图"><div class="caption">图：${storeName}经营数据总览（高德后台）</div></div>` : '';
-  const partnerImg = images['partner-data'] ? `<div class="screenshot"><img src="${images['partner-data']}" alt="周边合作门店数据"><div class="caption">图：周边合作门店经营数据对比</div></div>` : '';
+  const caseStudyImg = images['case-study'] ? `<div class="screenshot"><img src="${images['case-study']}" alt="合作案例效果对比"><div class="caption">图：合作前后效果对比</div></div>` : '';
 
   // Target calculation
   const targetLow = m.call.area > 0 ? Math.round(m.call.area * 0.3) : 0;
@@ -2002,7 +2109,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans G
   <div class="diag-element">
     <div class="diag-element-header"><span class="el-num">2</span>要素二：门店名称与标签 → 影响「搜索排名」</div>
     <div class="diag-element-body">
-      ${detailImgs}
+      ${detailMainImg}
       <div class="analysis">
         <div class="finding">
           <div class="f-label">❌ 问题1：标题与实际营业时间可能不一致</div>
@@ -2020,6 +2127,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans G
   <div class="diag-element">
     <div class="diag-element-header"><span class="el-num">3</span>要素三：评价与评分 → 影响「信任感/导航率」</div>
     <div class="diag-element-body">
+      ${detailReviewsImg}
       <div class="analysis">
         <div class="finding">
           <div class="f-label">❌ 问题：评价数量${parseInt(d.reviews)<=20?'严重不足':'偏少'}，信任背书缺失</div>
@@ -2035,6 +2143,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans G
   <div class="diag-element">
     <div class="diag-element-header"><span class="el-num">4</span>要素四：团购与优惠 → 影响「到店动机」</div>
     <div class="diag-element-body">
+      ${detailDealsImg}
       <div class="analysis">
         <div class="finding">
           <div class="f-label">❌ 问题：${parseInt(d.deals)===0?'0团购，客户没有到店理由':'团购项目吸引力不足'}</div>
@@ -2052,6 +2161,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans G
   <div class="diag-element">
     <div class="diag-element-header"><span class="el-num">5</span>要素五：营业时间与联系方式 → 影响「来电率/导航率」</div>
     <div class="diag-element-body">
+      ${detailHoursImg}
       <div class="analysis">
         <div class="finding">
           <div class="f-label">❌ 核心问题：营业时间展示需核实</div>
@@ -2093,26 +2203,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans G
     ${partnerCardsHtml}
   </div>
 
-  ${partnerImg}
+  ${searchImg}
 
   <div class="quote-box">
-    <strong>差距总结：</strong> 周边${partnerCount>0?partnerCount:''}家合作门店${d.partners.length>0?'全部达到<strong>'+d.partners.map(p=>p.level||'V6').join('/')+'、24h营业、有团购':'经营数据详见截图'}。${storeName}在商家等级、团购上架、评价积累等维度需要重点提升。
+    <strong>差距总结：</strong> 上图为搜索"宠物医院"结果页，${storeName}与周边门店在同一搜索场景下的直接对比。周边门店${d.partners.length>0?'（'+d.partners.map(p=>p.name).join('、')+'）':''}在商家等级、24h标识、团购价格展示、评价数量等方面均有明显优势，客户在列表页就会被分流。
   </div>
 </section>
 
 <!-- ===== 四、合作案例 ===== -->
-<div style="margin-bottom:40px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-    <div style="width:4px;height:24px;background:var(--success);border-radius:2px;"></div>
-    <h2 style="font-size:22px;font-weight:800;color:var(--gray-900);">四、合作案例 — 合作前后效果对比</h2>
-  </div>
-  <div style="text-align:center;background:#fff;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-md);">
-    <div style="color:var(--gray-400);font-size:14px;padding:40px 20px;">
-      📊 合作案例效果图待补充<br>
-      <span style="font-size:12px;margin-top:8px;display:block;">（建议上传合作前后效果对比截图）</span>
-    </div>
-  </div>
-</div>
+<section class="section">
+  <h2 class="section-title"><span class="icon">🏆</span>四、合作案例 — 合作前后效果对比</h2>
+  ${caseStudyImg ? caseStudyImg : `
+  <div style="text-align:center;padding:40px 20px;background:var(--gray-50);border-radius:12px;border:2px dashed var(--gray-300);">
+    <div style="font-size:40px;margin-bottom:12px;">📊</div>
+    <div style="color:var(--gray-500);font-size:14px;font-weight:600;">合作案例效果图</div>
+    <div style="color:var(--gray-400);font-size:12px;margin-top:6px;">可在工具中上传合作前后效果对比截图</div>
+  </div>`}
+</section>
 
 <!-- ===== 五、方案 ===== -->
 <section class="section">
@@ -2384,16 +2491,4 @@ document.querySelectorAll('.quick-data-modal input').forEach(input => {
       
       <div class="qdm-section-title">📋 其他（选填）</div>
       <div class="qdm-row">
-        <div class="qdm-field"><label>评价数</label><input type="number" id="qdm_reviews" placeholder="如 23" /></div>
-        <div class="qdm-field"><label>团购数</label><input type="number" id="qdm_deals" placeholder="如 0" /></div>
-      </div>
-    </div>
-    <div class="qdm-footer">
-      <button class="qdm-btn-cancel" onclick="closeQuickDataModal()">取消</button>
-      <button class="qdm-btn-confirm" onclick="confirmQuickData()">确认并生成报告</button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
+        <div class="qdm-field"><label>评价数</label><input t
