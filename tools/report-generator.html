@@ -933,34 +933,13 @@ function generateReport() {
 
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
-  
+
+  // Show progress briefly
   const progress = document.getElementById('progressBar');
   progress.classList.add('active');
-  
-  // Simulate progress
-  let pct = 0;
-  const steps = [
-    { pct: 20, text: '正在处理门店数据...' },
-    { pct: 40, text: '正在分析页面截图...' },
-    { pct: 60, text: '正在生成诊断报告...' },
-    { pct: 80, text: '正在嵌入合作案例...' },
-    { pct: 100, text: '生成完成！' }
-  ];
-  
-  let stepIdx = 0;
-  const timer = setInterval(() => {
-    if (stepIdx < steps.length) {
-      document.getElementById('progressFill').style.width = steps[stepIdx].pct + '%';
-      document.getElementById('progressText').textContent = steps[stepIdx].text;
-      stepIdx++;
-    } else {
-      clearInterval(timer);
-      finishGenerate();
-    }
-  }, 600);
-}
+  document.getElementById('progressFill').style.width = '50%';
+  document.getElementById('progressText').textContent = '正在生成诊断报告...';
 
-function finishGenerate() {
   const now = new Date();
   const dateStr = now.getFullYear() + '-' + 
     String(now.getMonth()+1).padStart(2,'0') + '-' + 
@@ -970,12 +949,19 @@ function finishGenerate() {
   
   const reportId = 'report_' + Date.now();
   
-  // Generate report HTML with uploaded images
+  // Generate report HTML synchronously (images already loaded as base64)
   const reportHtml = generateReportHtml(uploadedImages, dateStr);
   
-  // Open report in new tab
+  // Create Blob URL
   const blob = new Blob([reportHtml], { type: 'text/html' });
   const reportUrl = URL.createObjectURL(blob);
+
+  // Open report in new tab IMMEDIATELY (within click handler to avoid popup blocker)
+  const reportWindow = window.open(reportUrl, '_blank');
+  
+  // Update progress to complete
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = '生成完成！';
   
   // Save to history
   const historyItem = {
@@ -991,22 +977,27 @@ function finishGenerate() {
   reportHistory.unshift(historyItem);
   localStorage.setItem('reportHistory', JSON.stringify(reportHistory));
   
-  // Show result
-  document.getElementById('progressBar').classList.remove('active');
-  document.getElementById('resultCard').classList.add('active');
-  document.getElementById('resultTitle').textContent = '诊断报告已生成';
-  document.getElementById('resultSubtitle').textContent = '生成时间：' + dateStr;
-  document.getElementById('reportName').textContent = '诊断报告预览';
-  document.getElementById('previewUrl').textContent = '点击预览报告，或发送到群里由北辰生成在线链接';
-  
-  // Update preview button
-  const previewBtn = document.getElementById('previewBtn');
-  previewBtn.style.display = 'inline-block';
-  previewBtn.onclick = () => window.open(reportUrl, '_blank');
-  
-  document.getElementById('generateBtn').disabled = false;
-  
-  showToast('报告已生成！可预览或发到群里获取在线链接');
+  // Short delay then show result card
+  setTimeout(() => {
+    progress.classList.remove('active');
+    document.getElementById('resultCard').classList.add('active');
+    document.getElementById('resultTitle').textContent = '诊断报告已生成';
+    document.getElementById('resultSubtitle').textContent = '生成时间：' + dateStr;
+    document.getElementById('reportName').textContent = '诊断报告预览';
+    document.getElementById('previewUrl').textContent = '报告已在新标签页打开';
+    
+    const previewBtn = document.getElementById('previewBtn');
+    previewBtn.style.display = 'inline-block';
+    previewBtn.onclick = () => window.open(reportUrl, '_blank');
+    
+    btn.disabled = false;
+
+    if (!reportWindow) {
+      showToast('报告已生成，请点击「预览诊断报告」按钮打开');
+    } else {
+      showToast('报告已生成并在新标签页打开！');
+    }
+  }, 800);
 }
 
 function generateReportHtml(images, dateStr) {
