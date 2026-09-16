@@ -924,11 +924,6 @@ function resetZone(key) {
 
 // Generate report
 function generateReport() {
-  const storeName = document.getElementById('detectedStoreName').textContent;
-  if (!storeName || storeName.includes('上传') || storeName.includes('识别')) { 
-    showToast('请先上传门店数据截图以自动识别门店名称'); 
-    return; 
-  }
   if (!uploadedImages['store-data']) { showToast('请上传门店数据截图'); return; }
   if (!uploadedImages['partner-data']) { showToast('请上传周边合作门店数据'); return; }
   if (!uploadedImages['search-page']) { showToast('请上传搜索页截图'); return; }
@@ -958,12 +953,12 @@ function generateReport() {
       stepIdx++;
     } else {
       clearInterval(timer);
-      finishGenerate(storeName);
+      finishGenerate();
     }
   }, 600);
 }
 
-function finishGenerate(storeName) {
+function finishGenerate() {
   const now = new Date();
   const dateStr = now.getFullYear() + '-' + 
     String(now.getMonth()+1).padStart(2,'0') + '-' + 
@@ -972,18 +967,16 @@ function finishGenerate(storeName) {
     String(now.getMinutes()).padStart(2,'0');
   
   const reportId = 'report_' + Date.now();
-  const reportFileName = storeName + '_诊断报告_' + now.getFullYear() + 
-    String(now.getMonth()+1).padStart(2,'0') + 
-    String(now.getDate()).padStart(2,'0') + '.html';
   
   // Save to history
   const historyItem = {
     id: reportId,
-    storeName: storeName,
-    fileName: reportFileName,
+    storeName: '待确认',
+    fileName: '待确认',
     date: dateStr,
     images: { ...uploadedImages, 'store-detail': [...uploadedImages['store-detail']] },
-    url: null // Will be set when北辰 generates the link
+    url: null,
+    status: 'pending'
   };
   
   reportHistory.unshift(historyItem);
@@ -992,14 +985,14 @@ function finishGenerate(storeName) {
   // Show result
   document.getElementById('progressBar').classList.remove('active');
   document.getElementById('resultCard').classList.add('active');
-  document.getElementById('resultTitle').textContent = storeName + ' 诊断报告已生成';
-  document.getElementById('resultSubtitle').textContent = '生成时间：' + dateStr;
-  document.getElementById('reportName').textContent = reportFileName;
-  document.getElementById('previewUrl').textContent = '请发送图片到群内，由北辰生成在线链接';
+  document.getElementById('resultTitle').textContent = '截图已接收';
+  document.getElementById('resultSubtitle').textContent = '提交时间：' + dateStr;
+  document.getElementById('reportName').textContent = '请发送截图到群里 @北辰';
+  document.getElementById('previewUrl').textContent = '发送截图后，我将自动生成诊断报告并返回微信可打开的链接';
   
   document.getElementById('generateBtn').disabled = false;
   
-  showToast('报告已生成！');
+  showToast('截图已接收！请发到群里 @北辰');
 }
 
 // Copy URL
