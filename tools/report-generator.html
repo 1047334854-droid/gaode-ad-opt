@@ -1022,7 +1022,7 @@ function handleSingleUpload(key, input) {
   reader.readAsDataURL(file);
 }
 
-// Auto-detect store name using Tesseract.js OCR
+// Auto-detect store name + extract metrics using Tesseract.js OCR
 async function detectStoreName(imageData) {
   const nameInput = document.getElementById('storeNameInput');
   const statusEl = document.getElementById('ocrStatus');
@@ -1032,39 +1032,31 @@ async function detectStoreName(imageData) {
   nameInput.value = '';
   
   try {
-    // Run OCR with Chinese + English
     const result = await Tesseract.recognize(imageData, 'chi_sim+eng', {
-      logger: () => {} // suppress progress logs
+      logger: () => {}
     });
     
     const text = result.data.text;
-    console.log('OCR result:', text);
+    console.log('OCR full text:', text);
     
-    // Extract store name: look for patterns like "XXX宠物医院", "XXX动物医院", "XXX诊所" etc.
-    // The store name is usually in the first few lines
+    // === 1. Extract store name ===
     const lines = text.split('\n').filter(l => l.trim().length > 0);
     let storeName = '';
     
-    // Priority patterns for pet hospital names
-    const patterns = [
+    const namePatterns = [
       /([\u4e00-\u9fa5a-zA-Z]+(?:宠物|动物|兽医|宠物医院|动物医院|诊所|诊疗)[\u4e00-\u9fa5a-zA-Z]*)/i,
       /([\u4e00-\u9fa5]{2,15}(?:医院|诊所|门诊))/,
     ];
     
-    // Search first 5 lines for store name pattern
     for (let i = 0; i < Math.min(lines.length, 5); i++) {
       const line = lines[i].trim();
-      for (const pat of patterns) {
+      for (const pat of namePatterns) {
         const m = line.match(pat);
-        if (m) {
-          storeName = m[1];
-          break;
-        }
+        if (m) { storeName = m[1]; break; }
       }
       if (storeName) break;
     }
     
-    // Fallback: use the first meaningful line (skip short numeric/header lines)
     if (!storeName) {
       for (const line of lines) {
         const trimmed = line.trim();
@@ -1077,20 +1069,176 @@ async function detectStoreName(imageData) {
     
     if (storeName) {
       nameInput.value = storeName;
-      statusEl.textContent = '✅ 已识别';
+    }
+    
+    // === 2. Extract metrics from OCR text ===
+    const extracted = extractMetricsFromText(text);
+    let filledCount = 0;
+    
+    // Fill metric fields
+    const fieldMap = {
+      'exposure_self': 'm_exposure_self', 'exposure_area': 'm_exposure_area', 'exposure_city': 'm_exposure_city',
+      'click_self': 'm_click_self', 'click_area': 'm_click_area', 'click_city': 'm_click_city',
+      'nav_self': 'm_nav_self', 'nav_area': 'm_nav_area', 'nav_city': 'm_nav_city',
+      'call_self': 'm_call_self', 'call_area': 'm_call_area', 'call_city': 'm_call_city'
+    };
+    
+    for (const [key, fieldId] of Object.entries(fieldMap)) {
+      if (extracted[key] && extracted[key] > 0) {
+        const el = document.getElementById(fieldId);
+        if (el) {
+          el.value = extracted[key];
+          el.style.background = '#F0F9EB'; // highlight filled fields
+          el.style.borderColor = 'var(--success)';
+          filledCount++;
+          // Clear highlight after 3s
+          setTimeout(() => { el.style.background = ''; el.style.borderColor = ''; }, 3000);
+        }
+      }
+    }
+    
+    // Also try to extract reviews and deals
+    if (extracted.reviews) {
+      const revEl = document.getElementById('inputReviews');
+      if (revEl && !revEl.value) { revEl.value = extracted.reviews; filledCount++; }
+    }
+    if (extracted.deals !== undefined && extracted.deals !== null) {
+      const dealEl = document.getElementById('inputDeals');
+      if (dealEl && !dealEl.value) { dealEl.value = extracted.deals; filledCount++; }
+    }
+    
+    // === 3. Update status ===
+    const nameOk = !!storeName;
+    const dataOk = filledCount > 0;
+    
+    if (nameOk && dataOk) {
+      statusEl.textContent = `✅ 已识别门店名+${filledCount}项数据`;
       statusEl.style.color = 'var(--success)';
+    } else if (dataOk) {
+      statusEl.textContent = `✅ 已识别${filledCount}项数据` + (nameOk ? '' : '（门店名未识别）');
+      statusEl.style.color = 'var(--success)';
+    } else if (nameOk) {
+      statusEl.textContent = '✅ 已识别门店名（数据未识别，请手动补充）';
+      statusEl.style.color = 'var(--warning)';
     } else {
       statusEl.textContent = '⚠️ 未识别，请手动输入';
       statusEl.style.color = 'var(--danger, #E54D4D)';
-      nameInput.focus();
     }
     
   } catch (e) {
     console.error('OCR error:', e);
     statusEl.textContent = '❌ 识别失败，请手动输入';
     statusEl.style.color = 'var(--danger, #E54D4D)';
-    nameInput.focus();
   }
+}
+
+// Extract metrics from OCR text
+function extractMetricsFromText(text) {
+  const result = {};
+  
+  // Normalize text: remove spaces between digits, handle Chinese numbers
+  // Clean up OCR artifacts
+  const cleanText = text
+    .replace(/[，,]/g, '') // remove commas in numbers
+    .replace(/\s+/g, ' ')
+    .replace(/O/g, '0') // OCR often confuses O with 0
+    .replace(/l/g, '1'); // OCR often confuses l with 1
+  
+  // Parse number helper: handles "8.1万" "81000" "81,000"
+  function parseNum(s) {
+    if (!s) return null;
+    s = s.replace(/[,\s]/g, '');
+    const wanMatch = s.match(/^([\d.]+)万?$/);
+    if (wanMatch) {
+      const num = parseFloat(wanMatch[1]);
+      if (s.includes('万')) return Math.round(num * 10000);
+      return num;
+    }
+    return null;
+  }
+  
+  // Find numbers near metric keywords
+  function findMetricNumbers(keyword, text) {
+    // Look for lines containing the keyword
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      if (lowerLine.includes(keyword)) {
+        // Extract all numbers from this line
+        const nums = line.match(/[\d][\d.,]*[.\d万]?/g);
+        if (nums) {
+          // Clean and parse numbers
+          const parsed = nums.map(n => {
+            const clean = n.replace(/[,\s]/g, '');
+            if (clean.includes('万')) {
+              return Math.round(parseFloat(clean.replace('万','')) * 10000);
+            }
+            const num = parseInt(clean);
+            return isNaN(num) ? null : num;
+          }).filter(n => n !== null && n > 0);
+          
+          // Remove duplicates that are suspiciously large (OCR artifacts)
+          // and filter out numbers > 10M which are unlikely
+          const filtered = parsed.filter(n => n < 10000000);
+          
+          if (filtered.length >= 1) return filtered;
+        }
+      }
+    }
+    return null;
+  }
+  
+  // Extract each metric type
+  // 曝光 (exposure/impressions)
+  const expNums = findMetricNumbers('曝光', cleanText);
+  if (expNums) {
+    if (expNums[0]) result.exposure_self = expNums[0];
+    if (expNums[1]) result.exposure_area = expNums[1];
+    if (expNums[2]) result.exposure_city = expNums[2];
+  }
+  
+  // 点击 (click)
+  const clkNums = findMetricNumbers('点击', cleanText);
+  if (clkNums) {
+    if (clkNums[0]) result.click_self = clkNums[0];
+    if (clkNums[1]) result.click_area = clkNums[1];
+    if (clkNums[2]) result.click_city = clkNums[2];
+  }
+  
+  // 导航 (navigation)
+  const navNums = findMetricNumbers('导航', cleanText);
+  if (navNums) {
+    if (navNums[0]) result.nav_self = navNums[0];
+    if (navNums[1]) result.nav_area = navNums[1];
+    if (navNums[2]) result.nav_city = navNums[2];
+  }
+  
+  // 来电 (calls) - also check for "电话"
+  const callNums = findMetricNumbers('来电', cleanText) || findMetricNumbers('电话', cleanText);
+  if (callNums) {
+    if (callNums[0]) result.call_self = callNums[0];
+    if (callNums[1]) result.call_area = callNums[1];
+    if (callNums[2]) result.call_city = callNums[2];
+  }
+  
+  // 评价 (reviews)
+  const revMatch = cleanText.match(/评价\s*(\d+)\s*条?/);
+  if (revMatch) result.reviews = parseInt(revMatch[1]);
+  else {
+    const revMatch2 = cleanText.match(/(\d+)\s*条评价/);
+    if (revMatch2) result.reviews = parseInt(revMatch2[1]);
+  }
+  
+  // 团购 (deals)
+  const dealMatch = cleanText.match(/团购\s*(\d+)/);
+  if (dealMatch) result.deals = parseInt(dealMatch[1]);
+  else {
+    const dealMatch2 = cleanText.match(/(\d+)\s*个?团购/);
+    if (dealMatch2) result.deals = parseInt(dealMatch2[1]);
+  }
+  
+  console.log('Extracted metrics:', result);
+  return result;
 }
 
 // Multi image upload
