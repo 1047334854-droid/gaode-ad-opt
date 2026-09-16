@@ -674,6 +674,8 @@ body {
   .app-header, .generate-section, .upload-card, .history-section { display: none; }
 }
 </style>
+<!-- Tesseract.js for OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -697,16 +699,17 @@ body {
   <!-- Generate Tab -->
   <div id="tab-generate" class="tab-panel active">
     
-    <!-- Store Name - Auto Detected -->
+    <!-- Store Name - Auto Detected via OCR -->
     <div class="store-name-section" style="background: var(--success-light); border-color: var(--success);">
       <div class="section-label" style="color: var(--success);">
         <span class="num" style="background: var(--success);">✓</span>
         门店名称（自动识别）
       </div>
-      <div style="padding: 12px 16px; background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border);">
-        <span id="detectedStoreName" style="color: var(--text-muted); font-size: 14px;">上传"门店数据截图"后自动识别门店名称</span>
+      <div style="padding: 12px 16px; background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--border); display:flex; align-items:center; gap:10px;">
+        <input type="text" id="storeNameInput" placeholder="上传门店数据截图后自动识别..." style="flex:1; border:none; background:transparent; font-size:15px; color:var(--text-primary); outline:none;" />
+        <span id="ocrStatus" style="font-size:12px; color:var(--text-muted); white-space:nowrap;"></span>
       </div>
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">💡 上传门店数据截图后，系统自动抓取门店名称，无需手动输入</div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">💡 上传门店数据截图后自动识别门店名称，可手动修改</div>
     </div>
 
     <!-- Upload Grid -->
@@ -937,19 +940,75 @@ function handleSingleUpload(key, input) {
   reader.readAsDataURL(file);
 }
 
-// Auto-detect store name (will be replaced by actual OCR call)
-function detectStoreName(imageData) {
-  const nameEl = document.getElementById('detectedStoreName');
-  nameEl.textContent = '正在识别门店名称...';
-  nameEl.style.color = 'var(--warning)';
+// Auto-detect store name using Tesseract.js OCR
+async function detectStoreName(imageData) {
+  const nameInput = document.getElementById('storeNameInput');
+  const statusEl = document.getElementById('ocrStatus');
   
-  // In actual implementation, this will call OCR API
-  // For now, show a message that北辰 will handle the OCR
-  setTimeout(() => {
-    nameEl.textContent = '门店名称将由北辰自动识别（上传图片到群聊后处理）';
-    nameEl.style.color = 'var(--text-secondary)';
-    nameEl.style.fontSize = '13px';
-  }, 1000);
+  statusEl.textContent = '🔍 识别中...';
+  statusEl.style.color = 'var(--warning)';
+  nameInput.value = '';
+  
+  try {
+    // Run OCR with Chinese + English
+    const result = await Tesseract.recognize(imageData, 'chi_sim+eng', {
+      logger: () => {} // suppress progress logs
+    });
+    
+    const text = result.data.text;
+    console.log('OCR result:', text);
+    
+    // Extract store name: look for patterns like "XXX宠物医院", "XXX动物医院", "XXX诊所" etc.
+    // The store name is usually in the first few lines
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    let storeName = '';
+    
+    // Priority patterns for pet hospital names
+    const patterns = [
+      /([\u4e00-\u9fa5a-zA-Z]+(?:宠物|动物|兽医|宠物医院|动物医院|诊所|诊疗)[\u4e00-\u9fa5a-zA-Z]*)/i,
+      /([\u4e00-\u9fa5]{2,15}(?:医院|诊所|门诊))/,
+    ];
+    
+    // Search first 5 lines for store name pattern
+    for (let i = 0; i < Math.min(lines.length, 5); i++) {
+      const line = lines[i].trim();
+      for (const pat of patterns) {
+        const m = line.match(pat);
+        if (m) {
+          storeName = m[1];
+          break;
+        }
+      }
+      if (storeName) break;
+    }
+    
+    // Fallback: use the first meaningful line (skip short numeric/header lines)
+    if (!storeName) {
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.length >= 2 && trimmed.length <= 30 && !/^[\d\s\-\.]+$/.test(trimmed)) {
+          storeName = trimmed;
+          break;
+        }
+      }
+    }
+    
+    if (storeName) {
+      nameInput.value = storeName;
+      statusEl.textContent = '✅ 已识别';
+      statusEl.style.color = 'var(--success)';
+    } else {
+      statusEl.textContent = '⚠️ 未识别，请手动输入';
+      statusEl.style.color = 'var(--danger, #E54D4D)';
+      nameInput.focus();
+    }
+    
+  } catch (e) {
+    console.error('OCR error:', e);
+    statusEl.textContent = '❌ 识别失败，请手动输入';
+    statusEl.style.color = 'var(--danger, #E54D4D)';
+    nameInput.focus();
+  }
 }
 
 // Multi image upload
@@ -1054,9 +1113,10 @@ function generateReport() {
     String(now.getMinutes()).padStart(2,'0');
   
   const reportId = 'report_' + Date.now();
+  const storeName = document.getElementById('storeNameInput').value.trim() || '未命名门店';
   
   // Generate report HTML synchronously (images already loaded as base64)
-  const reportHtml = generateReportHtml(uploadedImages, dateStr);
+  const reportHtml = generateReportHtml(uploadedImages, dateStr, storeName);
   
   // Show report in inline viewer (works on all browsers including mobile/WeChat)
   
@@ -1067,7 +1127,7 @@ function generateReport() {
   // Save to IndexedDB
   const historyItem = {
     id: reportId,
-    storeName: '待确认',
+    storeName: storeName,
     date: dateStr,
     timestamp: Date.now(),
     html: reportHtml,
@@ -1090,17 +1150,17 @@ function generateReport() {
     
     const previewBtn = document.getElementById('previewBtn');
     previewBtn.style.display = 'inline-block';
-    previewBtn.onclick = () => showReportInViewer(reportHtml, '诊断报告');
+    previewBtn.onclick = () => showReportInViewer(reportHtml, storeName + ' - 诊断报告');
     
     btn.disabled = false;
 
     // Auto-open the report in the inline viewer
-    showReportInViewer(reportHtml, '诊断报告');
+    showReportInViewer(reportHtml, storeName + ' - 诊断报告');
     showToast('报告已生成！');
   }, 800);
 }
 
-function generateReportHtml(images, dateStr) {
+function generateReportHtml(images, dateStr, storeName) {
   // Convert images to base64 data URLs
   function imgToBase64(imgData) {
     return imgData || '';
@@ -1118,7 +1178,7 @@ function generateReportHtml(images, dateStr) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>门店诊断报告</title>
+<title>${storeName} - 诊断报告</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, -apple-system, "PingFang SC", sans-serif; background: #F6F8FB; color: #152033; line-height: 1.6; padding: 16px; }
@@ -1134,8 +1194,8 @@ img { max-width: 100%; border-radius: 8px; }
 </head>
 <body>
 <div class="container">
-<h1>📊 门店诊断报告</h1>
-<div class="meta">生成时间：${dateStr}</div>
+<h1>📊 ${storeName} - 诊断报告</h1>
+<div class="meta">门店名称：${storeName}<br>生成时间：${dateStr}</div>
 
 <div class="card">
 <h2>📈 一、经营数据现状</h2>
@@ -1293,7 +1353,7 @@ function showToast(msg) {
     <span class="viewer-title" id="viewerTitle">诊断报告</span>
     <span style="width:60px"></span>
   </div>
-  <iframe class="report-viewer-frame" id="reportViewerFrame" sandbox="allow-same-origin"></iframe>
+  <iframe class="report-viewer-frame" id="reportViewerFrame"></iframe>
 </div>
 
 </body>
