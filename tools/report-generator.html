@@ -787,6 +787,84 @@ body {
       </div>
     </div>
 
+    <!-- Structured Data Input -->
+    <div style="background:#fff;border-radius:14px;padding:24px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div style="font-size:16px;font-weight:700;color:#152033;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <span style="background:#2F6BFF;color:#fff;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">2</span>
+        填写经营数据（从截图中提取）
+      </div>
+
+      <!-- 基础信息 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:#637089;font-weight:600;">门店地址</label>
+          <input type="text" id="inputAddress" placeholder="如：绵阳市涪城区虹桥路三汇玫瑰花城8-3" style="width:100%;padding:10px 12px;border:1px solid #E6EAF2;border-radius:8px;font-size:14px;outline:none;" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:12px;color:#637089;font-weight:600;">商家等级</label>
+            <input type="text" id="inputLevel" placeholder="V认证" style="width:100%;padding:10px 12px;border:1px solid #E6EAF2;border-radius:8px;font-size:14px;outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:#637089;font-weight:600;">评价数</label>
+            <input type="text" id="inputReviews" placeholder="12" style="width:100%;padding:10px 12px;border:1px solid #E6EAF2;border-radius:8px;font-size:14px;outline:none;" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:#637089;font-weight:600;">团购数</label>
+            <input type="text" id="inputDeals" placeholder="0" style="width:100%;padding:10px 12px;border:1px solid #E6EAF2;border-radius:8px;font-size:14px;outline:none;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 经营数据表 -->
+      <div style="font-size:13px;font-weight:600;color:#637089;margin-bottom:8px;">经营数据对比（本店 / 周边 / 同城）</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#F6F8FB;">
+              <th style="padding:10px;text-align:left;font-weight:600;color:#637089;border-bottom:2px solid #E6EAF2;">指标</th>
+              <th style="padding:10px;text-align:center;font-weight:600;color:#637089;border-bottom:2px solid #E6EAF2;">本店</th>
+              <th style="padding:10px;text-align:center;font-weight:600;color:#637089;border-bottom:2px solid #E6EAF2;">周边均值</th>
+              <th style="padding:10px;text-align:center;font-weight:600;color:#637089;border-bottom:2px solid #E6EAF2;">同城均值</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:8px 10px;border-bottom:1px solid #F0F2F5;">曝光量</td><td style="padding:4px;"><input type="text" id="m_exposure_self" placeholder="4931" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_exposure_area" placeholder="81000" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_exposure_city" placeholder="554000" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td></tr>
+            <tr><td style="padding:8px 10px;border-bottom:1px solid #F0F2F5;">点击量</td><td style="padding:4px;"><input type="text" id="m_click_self" placeholder="162" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_click_area" placeholder="2898" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_click_city" placeholder="21000" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td></tr>
+            <tr><td style="padding:8px 10px;border-bottom:1px solid #F0F2F5;">导航量</td><td style="padding:4px;"><input type="text" id="m_nav_self" placeholder="68" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_nav_area" placeholder="940" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_nav_city" placeholder="7728" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td></tr>
+            <tr><td style="padding:8px 10px;border-bottom:1px solid #F0F2F5;">来电量</td><td style="padding:4px;"><input type="text" id="m_call_self" placeholder="15" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_call_area" placeholder="226" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td><td style="padding:4px;"><input type="text" id="m_call_city" placeholder="1756" style="width:100%;padding:8px;border:1px solid #E6EAF2;border-radius:6px;text-align:center;font-size:13px;" /></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:#9CA8BE;margin-top:6px;">💡 转化率（点击率/导航率/来电率）自动计算，无需手动填写</div>
+
+      <!-- 周边合作门店 -->
+      <div style="font-size:13px;font-weight:600;color:#637089;margin:16px 0 8px;">周边合作门店（填写3-4家）</div>
+      <div id="partnerStoresList">
+        <div class="partner-store-row" style="display:grid;grid-template-columns:1fr 80px 100px 80px 1fr;gap:6px;margin-bottom:6px;align-items:center;">
+          <input type="text" class="ps-name" placeholder="门店名称" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+          <input type="text" class="ps-level" placeholder="V6" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-visitors" placeholder="190人到访" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-deal" placeholder="¥155起" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-tags" placeholder="标签(24h,团购)" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+        </div>
+        <div class="partner-store-row" style="display:grid;grid-template-columns:1fr 80px 100px 80px 1fr;gap:6px;margin-bottom:6px;align-items:center;">
+          <input type="text" class="ps-name" placeholder="门店名称" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+          <input type="text" class="ps-level" placeholder="V6" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-visitors" placeholder="297人到访" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-deal" placeholder="¥154起" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-tags" placeholder="标签(24h,团购)" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+        </div>
+        <div class="partner-store-row" style="display:grid;grid-template-columns:1fr 80px 100px 80px 1fr;gap:6px;margin-bottom:6px;align-items:center;">
+          <input type="text" class="ps-name" placeholder="门店名称" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+          <input type="text" class="ps-level" placeholder="V6" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-visitors" placeholder="323人到访" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-deal" placeholder="到店送检查" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;text-align:center;" />
+          <input type="text" class="ps-tags" placeholder="标签(24h,宠保)" style="padding:8px;border:1px solid #E6EAF2;border-radius:6px;font-size:13px;" />
+        </div>
+      </div>
+    </div>
+
     <!-- Generate Button -->
     <div class="generate-section">
       <button class="generate-btn" id="generateBtn" onclick="generateReport()">生成诊断报告</button>
@@ -1164,19 +1242,116 @@ function generateReport() {
   }, 800);
 }
 
+// Collect form data
+function collectFormData() {
+  function gv(id) { return (document.getElementById(id)?.value || '').trim(); }
+  function gn(id) { return parseFloat(gv(id).replace(/,/g,'')) || 0; }
+
+  const data = {
+    address: gv('inputAddress'),
+    level: gv('inputLevel') || 'V认证',
+    reviews: gv('inputReviews') || '0',
+    deals: gv('inputDeals') || '0',
+    metrics: {
+      exposure: { self: gn('m_exposure_self'), area: gn('m_exposure_area'), city: gn('m_exposure_city') },
+      click: { self: gn('m_click_self'), area: gn('m_click_area'), city: gn('m_click_city') },
+      nav: { self: gn('m_nav_self'), area: gn('m_nav_area'), city: gn('m_nav_city') },
+      call: { self: gn('m_call_self'), area: gn('m_call_area'), city: gn('m_call_city') }
+    }
+  };
+
+  // Auto-calculate conversion rates
+  const m = data.metrics;
+  data.clickRate = m.exposure.self > 0 ? (m.click.self / m.exposure.self * 100).toFixed(1) : '0';
+  data.clickRateArea = m.exposure.area > 0 ? (m.click.area / m.exposure.area * 100).toFixed(1) : '0';
+  data.clickRateCity = m.exposure.city > 0 ? (m.click.city / m.exposure.city * 100).toFixed(1) : '0';
+  data.navRate = m.click.self > 0 ? (m.nav.self / m.click.self * 100).toFixed(1) : '0';
+  data.navRateArea = m.click.area > 0 ? (m.nav.area / m.click.area * 100).toFixed(1) : '0';
+  data.navRateCity = m.click.city > 0 ? (m.nav.city / m.click.city * 100).toFixed(1) : '0';
+  data.callRate = m.click.self > 0 ? (m.call.self / m.click.self * 100).toFixed(1) : '0';
+  data.callRateArea = m.click.area > 0 ? (m.call.area / m.click.area * 100).toFixed(1) : '0';
+  data.callRateCity = m.click.city > 0 ? (m.call.city / m.click.city * 100).toFixed(1) : '0';
+
+  // Collect partner stores
+  data.partners = [];
+  document.querySelectorAll('.partner-store-row').forEach(row => {
+    const name = row.querySelector('.ps-name')?.value?.trim();
+    if (name) {
+      data.partners.push({
+        name,
+        level: row.querySelector('.ps-level')?.value?.trim() || '',
+        visitors: row.querySelector('.ps-visitors')?.value?.trim() || '',
+        deal: row.querySelector('.ps-deal')?.value?.trim() || '',
+        tags: row.querySelector('.ps-tags')?.value?.trim() || ''
+      });
+    }
+  });
+
+  return data;
+}
+
+function fmt(n) { return n >= 10000 ? (n/10000).toFixed(1) + '万' : n.toLocaleString(); }
+function pct(self, area) { return area > 0 ? (self/area*100).toFixed(1) : '0'; }
+
 function generateReportHtml(images, dateStr, storeName) {
-  // Convert images to base64 data URLs
-  function imgToBase64(imgData) {
-    return imgData || '';
+  const d = collectFormData();
+  const m = d.metrics;
+
+  // Gap analysis
+  const expPct = pct(m.exposure.self, m.exposure.area);
+  const clkPct = pct(m.click.self, m.click.area);
+  const navPct = pct(m.nav.self, m.nav.area);
+  const callPct = pct(m.call.self, m.call.area);
+
+  // Conclusion
+  const ratesHigh = parseFloat(d.navRate) > parseFloat(d.navRateArea) || parseFloat(d.callRate) > parseFloat(d.callRateArea);
+  let conclusion = '';
+  if (ratesHigh) {
+    conclusion = `四个漏斗绝对值仅为周边的${expPct}%~${callPct}%，但转化率均高于周边，说明进来的客户意向不差。问题出在前面——<strong>"没人看到"</strong>和<strong>"看到了不想点"</strong>。`;
+  } else {
+    conclusion = `曝光、点击、导航、来电全面低于周边均值，流量和页面均需重点优化。`;
   }
-  
-  let storeDetailHtml = '';
-  if (images['store-detail'] && images['store-detail'].length > 0) {
-    storeDetailHtml = images['store-detail'].map(img => 
-      `<img src="${img}" style="max-width:100%;border-radius:8px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">`
-    ).join('');
-  }
-  
+
+  // Partner store cards
+  let partnerCards = '';
+  // First: the store itself (highlight)
+  partnerCards += `<div style="background:#FFF7ED;border:2px solid #F59E0B;border-radius:14px;padding:20px;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px;">${storeName} <span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:4px;font-size:12px;">${d.level}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:13px;">
+      <div><div style="color:#9CA3AF;font-size:11px;">评价/去过</div><div style="font-weight:700;color:#DC2626;">${d.reviews}条</div></div>
+      <div><div style="color:#9CA3AF;font-size:11px;">团购项目</div><div style="font-weight:700;color:#DC2626;">${d.deals}个</div></div>
+      <div><div style="color:#9CA3AF;font-size:11px;">曝光量</div><div style="font-weight:700;color:#DC2626;">${fmt(m.exposure.self)}</div></div>
+      <div><div style="color:#9CA3AF;font-size:11px;">来电量</div><div style="font-weight:700;color:#DC2626;">${m.call.self}</div></div>
+    </div>
+  </div>`;
+
+  d.partners.forEach(p => {
+    const tagList = p.tags.split(/[,，]/).filter(t=>t.trim()).map(t => {
+      const isGreen = /24h|团购|安心|宠保|送/.test(t);
+      return `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${isGreen?'#DCFCE7':'#FFF7ED'};color:${isGreen?'#16A34A':'#F59E0B'};">${t.trim()}</span>`;
+    }).join(' ');
+    partnerCards += `<div style="background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:20px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:12px;">${p.name} <span style="background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:4px;font-size:12px;">${p.level}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px;">
+        <div><div style="color:#9CA3AF;font-size:11px;">去过人数</div><div style="font-weight:700;color:#16A34A;">${p.visitors}</div></div>
+        <div><div style="color:#9CA3AF;font-size:11px;">团购</div><div style="font-weight:700;color:#16A34A;">${p.deal}</div></div>
+        <div><div style="color:#9CA3AF;font-size:11px;">标签</div><div>${tagList}</div></div>
+      </div>
+    </div>`;
+  });
+
+  // Screenshots
+  const searchImg = images['search-page'] ? `<img src="${images['search-page']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
+  const detailImgs = images['store-detail']?.length ? images['store-detail'].map(img =>
+    `<img src="${img}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">`
+  ).join('') : '';
+  const storeDataImg = images['store-data'] ? `<img src="${images['store-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
+  const partnerImg = images['partner-data'] ? `<img src="${images['partner-data']}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:12px;">` : '';
+
+  // Target calculation
+  const targetLow = Math.round(m.call.area * 0.3);
+  const targetHigh = Math.round(m.call.area * 0.5);
+
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1184,52 +1359,196 @@ function generateReportHtml(images, dateStr, storeName) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${storeName} - 诊断报告</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, -apple-system, "PingFang SC", sans-serif; background: #F6F8FB; color: #152033; line-height: 1.6; padding: 16px; }
-.container { max-width: 800px; margin: 0 auto; }
-h1 { font-size: 22px; margin-bottom: 16px; color: #2F6BFF; }
-h2 { font-size: 18px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #EBF1FF; color: #152033; }
-h3 { font-size: 15px; margin: 16px 0 8px; color: #637089; }
-.card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-img { max-width: 100%; border-radius: 8px; }
-.meta { color: #637089; font-size: 13px; margin-bottom: 20px; }
-.footer { text-align: center; color: #9CA8BE; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #E6EAF2; }
+:root{--bg:#F0F2F5;--primary:#1a56db;--danger:#DC2626;--danger-light:#FEE2E2;--success:#16A34A;--success-light:#DCFCE7;--warning:#F59E0B;--warning-light:#FEF3C7;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-700:#374151;--gray-900:#111827;--radius:14px;--shadow:0 2px 8px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);--shadow-md:0 4px 16px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--gray-900);line-height:1.8;font-size:15px;-webkit-font-smoothing:antialiased}
+.container{max-width:1100px;margin:0 auto;padding:36px 28px 52px}
+.section{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-md);padding:32px;margin-bottom:24px}
+.section-title{font-size:21px;font-weight:700;margin-bottom:24px;padding-bottom:12px;border-bottom:3px solid var(--primary);display:flex;align-items:center;gap:10px}
+.section-title .icon{width:32px;height:32px;background:var(--primary);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.data-table{width:100%;border-collapse:collapse;font-size:14px}
+.data-table thead th{background:var(--gray-50);padding:14px 16px;text-align:center;font-weight:700;color:var(--gray-700);border-bottom:2px solid var(--gray-200);font-size:13px}
+.data-table thead th:first-child{text-align:left;border-radius:8px 0 0 0}
+.data-table thead th:last-child{border-radius:0 8px 0 0}
+.data-table tbody td{padding:14px 16px;border-bottom:1px solid var(--gray-100);text-align:center;font-size:14px}
+.data-table tbody td:first-child{text-align:left;font-weight:600;color:var(--gray-700)}
+.val-bad{color:var(--danger);font-weight:700}
+.val-good{color:var(--success);font-weight:700}
+.val-warn{color:var(--warning);font-weight:700}
+.gap-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;margin-left:4px}
+.gap-tag.bad{background:var(--danger-light);color:var(--danger)}
+.gap-tag.good{background:var(--success-light);color:var(--success)}
+.quote-box{background:var(--gray-50);border-left:4px solid var(--primary);padding:16px 20px;border-radius:0 8px 8px 0;margin-top:20px;font-size:14px;line-height:1.7}
+.store-info-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.store-info-item{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:12px 16px;flex:1;min-width:140px}
+.store-info-item .label{font-size:12px;font-weight:600;color:var(--gray-500)}
+.store-info-item .value{font-size:15px;font-weight:700;margin-top:2px}
+.diag-el{border:1px solid var(--gray-200);border-radius:12px;margin-bottom:16px;overflow:hidden}
+.diag-el-head{background:var(--gray-50);padding:12px 16px;font-weight:700;font-size:14px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px}
+.diag-el-head .num{width:24px;height:24px;background:var(--primary);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.diag-el-body{padding:16px}
+.finding{margin-bottom:12px}
+.finding .f-label{font-weight:700;font-size:14px;margin-bottom:4px}
+.finding .f-text{font-size:13px;color:var(--gray-500);line-height:1.7}
+.data-tag{display:inline-block;background:var(--warning-light);color:#92400E;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-top:8px}
+.solution-list{list-style:none}
+.solution-item{display:flex;gap:16px;margin-bottom:20px;padding:16px;background:var(--gray-50);border-radius:12px}
+.solution-num{width:36px;height:36px;background:var(--primary);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.solution-content h4{font-size:15px;font-weight:700;margin-bottom:6px}
+.solution-content p{font-size:13px;color:var(--gray-500);line-height:1.7;margin-bottom:8px}
+.action-tag{display:inline-block;padding:3px 10px;background:#E8EEFB;color:var(--primary);border-radius:4px;font-size:12px;font-weight:600;margin:2px 4px 2px 0}
+.target-banner{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#1a56db,#0f3a8a);color:#fff;padding:28px 32px;border-radius:14px}
+.target-icon{font-size:40px}
+.target-text h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.target-text p{font-size:13px;opacity:0.85;line-height:1.7}
+.report-header{background:linear-gradient(135deg,#1a56db 0%,#0f3a8a 100%);color:#fff;padding:40px 44px 36px;position:relative;overflow:hidden}
+.report-header::after{content:'';position:absolute;top:-50%;right:-15%;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);border-radius:50%}
+.report-header h1{font-size:28px;font-weight:700;margin-bottom:8px;position:relative}
+.report-header .subtitle{font-size:15px;opacity:0.85;position:relative}
+.report-header .meta{display:flex;gap:20px;margin-top:14px;font-size:13px;opacity:0.75;position:relative;flex-wrap:wrap}
+.report-footer{text-align:center;color:var(--gray-400);font-size:12px;padding:24px;margin-top:20px;border-top:1px solid var(--gray-200)}
+@media(max-width:768px){
+  .container{padding:16px 12px 32px}
+  .section{padding:20px 16px}
+  .report-header{padding:28px 20px}
+  .report-header h1{font-size:22px}
+  .data-table{font-size:12px}
+  .data-table thead th,.data-table tbody td{padding:10px 8px}
+  .store-info-bar{flex-direction:column}
+  .solution-item{flex-direction:column;gap:8px}
+  .target-banner{flex-direction:column;text-align:center;padding:20px}
+}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>📊 ${storeName} - 诊断报告</h1>
-<div class="meta">门店名称：${storeName}<br>生成时间：${dateStr}</div>
 
-<div class="card">
-<h2>📈 一、经营数据现状</h2>
-<h3>门店数据截图</h3>
-${images['store-data'] ? `<img src="${images['store-data']}" style="max-width:100%;">` : ''}
-</div>
+<header class="report-header">
+  <h1>${storeName} 线上获客诊断报告</h1>
+  <div class="subtitle">基于高德地图经营分析数据 · 页面实际诊断 · 合作门店案例对标</div>
+  <div class="meta">
+    <span>📍 ${d.address || '地址待补充'}</span>
+    <span>📅 数据日期：${dateStr}</span>
+    <span>🔍 对比范围：3公里宠物医院</span>
+  </div>
+</header>
 
-<div class="card">
-<h2>🏪 二、周边合作门店对比</h2>
-<h3>周边合作门店数据</h3>
-${images['partner-data'] ? `<img src="${images['partner-data']}" style="max-width:100%;">` : ''}
-</div>
+<main class="container">
 
-<div class="card">
-<h2>🔍 三、搜索页面分析</h2>
-<h3>搜索页截图</h3>
-${images['search-page'] ? `<img src="${images['search-page']}" style="max-width:100%;">` : ''}
-</div>
+<!-- Part 1: 经营数据 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">📊</span>一、经营数据现状</h2>
+  <div class="store-info-bar">
+    <div class="store-info-item"><div class="label">门店名称</div><div class="value">${storeName}</div></div>
+    <div class="store-info-item"><div class="label">商家等级</div><div class="value" style="color:var(--danger);">${d.level}</div></div>
+    <div class="store-info-item"><div class="label">评价数</div><div class="value" style="color:var(--danger);">${d.reviews}条</div></div>
+    <div class="store-info-item"><div class="label">团购项目</div><div class="value" style="color:var(--danger);">${d.deals}个</div></div>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>指标</th><th>本店</th><th>周边均值</th><th>同城均值</th><th>差距</th></tr></thead>
+    <tbody>
+      <tr><td>曝光量</td><td class="val-bad">${fmt(m.exposure.self)}</td><td>${fmt(m.exposure.area)}</td><td>${fmt(m.exposure.city)}</td><td><span class="gap-tag bad">仅周边${expPct}%</span></td></tr>
+      <tr><td>点击量</td><td class="val-bad">${fmt(m.click.self)}</td><td>${fmt(m.click.area)}</td><td>${fmt(m.click.city)}</td><td><span class="gap-tag bad">仅周边${clkPct}%</span></td></tr>
+      <tr><td>曝光→点击率</td><td class="val-warn">${d.clickRate}%</td><td>${d.clickRateArea}%</td><td>${d.clickRateCity}%</td><td><span class="gap-tag ${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'good':'bad'}">${parseFloat(d.clickRate)>=parseFloat(d.clickRateArea)?'高于周边':'略低'}</span></td></tr>
+      <tr><td>导航量</td><td class="val-bad">${fmt(m.nav.self)}</td><td>${fmt(m.nav.area)}</td><td>${fmt(m.nav.city)}</td><td><span class="gap-tag bad">仅周边${navPct}%</span></td></tr>
+      <tr><td>点击→导航率</td><td class="${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'val-good':'val-bad'}">${d.navRate}%</td><td>${d.navRateArea}%</td><td>${d.navRateCity}%</td><td><span class="gap-tag ${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'good':'bad'}">${parseFloat(d.navRate)>=parseFloat(d.navRateArea)?'高于周边':'低于周边'}</span></td></tr>
+      <tr><td>来电量</td><td class="val-bad">${m.call.self}</td><td>${m.call.area}</td><td>${m.call.city}</td><td><span class="gap-tag bad">仅周边${callPct}%</span></td></tr>
+      <tr><td>点击→来电率</td><td class="${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'val-good':'val-bad'}">${d.callRate}%</td><td>${d.callRateArea}%</td><td>${d.callRateCity}%</td><td><span class="gap-tag ${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'good':'bad'}">${parseFloat(d.callRate)>=parseFloat(d.callRateArea)?'高于周边':'低于周边'}</span></td></tr>
+    </tbody>
+  </table>
+  <div class="quote-box"><strong>一句话结论：</strong>${conclusion}</div>
+  ${storeDataImg}
+</section>
 
-<div class="card">
-<h2>📱 四、门店详情页诊断</h2>
-<h3>门店详情截图</h3>
-${storeDetailHtml}
-</div>
+<!-- Part 2: 页面诊断 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">🔍</span>二、页面诊断 — 五要素分析</h2>
+  ${searchImg ? `
+  <div class="diag-el">
+    <div class="diag-el-head"><span class="num">1</span>要素一：头图/封面 → 影响「点击率」</div>
+    <div class="diag-el-body">
+      <div class="finding"><div class="f-label">📸 搜索列表页截图</div><div class="f-text">结合截图分析：头图辨识度、差异化标识是否突出、与周边门店对比的视觉竞争力。</div></div>
+      ${searchImg}
+      <div class="data-tag">曝光→点击率 ${d.clickRate}% vs 周边 ${d.clickRateArea}% vs 同城 ${d.clickRateCity}%</div>
+    </div>
+  </div>` : ''}
+  ${detailImgs ? `
+  <div class="diag-el">
+    <div class="diag-el-head"><span class="num">2</span>要素二：门店名称与标签 → 影响「搜索排名」</div>
+    <div class="diag-el-body">
+      <div class="finding"><div class="f-label">📸 门店详情页截图</div><div class="f-text">结合截图分析：标题与实际是否一致、标签覆盖是否全面、V等级和营业状态展示。</div></div>
+      ${detailImgs}
+    </div>
+  </div>
+  <div class="diag-el">
+    <div class="diag-el-head"><span class="num">3</span>要素三：评价与评分 → 影响「信任感/导航率」</div>
+    <div class="diag-el-body">
+      <div class="finding"><div class="f-label">当前评价${d.reviews}条</div><div class="f-text">评价数量是否足够建立信任？最新评价时间？评价质量如何？</div></div>
+      <div class="data-tag">评价 ${d.reviews}条 vs 周边竞品 100+到访记录</div>
+    </div>
+  </div>
+  <div class="diag-el">
+    <div class="diag-el-head"><span class="num">4</span>要素四：团购与优惠 → 影响「到店动机」</div>
+    <div class="diag-el-body">
+      <div class="finding"><div class="f-label">当前团购${d.deals}个</div><div class="f-text">${parseInt(d.deals)===0?'没有团购项目，客户缺少到店理由。对比周边门店均有团购套餐。':'有团购项目，检查价格竞争力和套餐吸引力。'}</div></div>
+      <div class="data-tag">博雅 ${d.deals}团购 vs 周边门店均有团购</div>
+    </div>
+  </div>
+  <div class="diag-el">
+    <div class="diag-el-head"><span class="num">5</span>要素五：营业时间与联系方式 → 影响「来电率/导航率」</div>
+    <div class="diag-el-body">
+      <div class="finding"><div class="f-label">营业时间与标题一致性检查</div><div class="f-text">门店标题是否标注了"24h"但营业时间并非24小时？这是最常见的信任矛盾。</div></div>
+      <div class="data-tag">点击→导航 ${d.navRate}% · 点击→来电 ${d.callRate}%</div>
+    </div>
+  </div>` : ''}
+</section>
 
-<div class="footer">
-<p>此报告由诊断报告生成器自动生成</p>
-<p>如需完整诊断分析，请发送截图到群里 @北辰</p>
-</div>
-</div>
+<!-- Part 3: 周边合作门店对比 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">⚔️</span>三、周边合作门店对比</h2>
+  <div style="display:grid;gap:16px;">
+    ${partnerCards}
+  </div>
+  ${partnerImg}
+  <div class="quote-box"><strong>差距总结：</strong>周边合作门店全部达到V级、有团购、100+到访记录。本店在商家等级、营业时长、团购上架、评价积累等维度需要重点提升。</div>
+</section>
+
+<!-- Part 4: 合作案例 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">📋</span>四、合作案例 — 合作前后效果对比</h2>
+  <div style="text-align:center;">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200'%3E%3Crect fill='%23F0F2F5' width='600' height='200' rx='12'/%3E%3Ctext x='300' y='100' text-anchor='middle' fill='%239CA3AF' font-size='16' font-family='system-ui'%3E请上传合作案例对比图%3C/text%3E%3C/svg%3E" style="max-width:100%;border-radius:12px;">
+  </div>
+</section>
+
+<!-- Part 5: 方案 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">💡</span>五、优化方案</h2>
+  <ul class="solution-list">
+    <li class="solution-item"><div class="solution-num">1</div><div class="solution-content"><h4>抢回第一屏 — 解决"看不到"</h4><p>通过高德推广（CPC/OCPC），在宠物医院相关关键词搜索时让门店出现在前排。${m.exposure.self > 0 ? '当前曝光仅'+fmt(m.exposure.self)+'，为周边'+expPct+'%。' : ''}</p><div><span class="action-tag">开通OCPC推广</span><span class="action-tag">覆盖核心关键词</span><span class="action-tag">3公里精准投放</span></div></div></li>
+    <li class="solution-item"><div class="solution-num">2</div><div class="solution-content"><h4>页面全面装修 — 解决"不想点"</h4><p>专业头图替换随手拍，突出核心卖点标识。完善标签、环境照、轮播图。参考周边V级门店页面标准全面升级。</p><div><span class="action-tag">专业头图/环境照</span><span class="action-tag">核心卖点标识强化</span><span class="action-tag">标签完善</span><span class="action-tag">轮播图上架</span></div></div></li>
+    <li class="solution-item"><div class="solution-num">3</div><div class="solution-content"><h4>团购上架 + 评价积累 — 解决"没理由到店"</h4><p>上架1-2个引流套餐，给客户到店理由。同时引导老客户写评价，每月新增3-5条，快速积累信任背书。</p><div><span class="action-tag">引流团购套餐</span><span class="action-tag">引导好评</span><span class="action-tag">医生资质展示</span><span class="action-tag">冲V级</span></div></div></li>
+    <li class="solution-item"><div class="solution-num">4</div><div class="solution-content"><h4>运营细节优化 — 解决"转化漏损"</h4><p>修正营业时间展示与标题一致性，完善在线预约入口，对标周边门店运营细节。</p><div><span class="action-tag">营业时间修正</span><span class="action-tag">预约入口</span><span class="action-tag">月度数据对账</span></div></div></li>
+  </ul>
+</section>
+
+<!-- Part 6: 保守目标 -->
+<section class="section">
+  <h2 class="section-title"><span class="icon">🎯</span>六、保守目标</h2>
+  <div class="target-banner">
+    <div class="target-icon">🎯</div>
+    <div class="target-text">
+      <h3>合作后保守预估：月来电量从${m.call.self}条提升至${targetLow}-${targetHigh}条</h3>
+      <p>本店来电量仅为周边同行${callPct}%，即使只追平周边均值的30%-50%，月来电也能从${m.call.self}条提升到${targetLow}-${targetHigh}条。参考周边合作门店的实际效果，实际有望更高。</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="report-footer">
+  柚宠科技 · 高德宠物行业TOP1服务商 · 数据来源：高德地图经营分析后台
+</footer>
+
 </body>
 </html>`;
 }
