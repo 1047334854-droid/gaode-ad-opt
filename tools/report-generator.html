@@ -630,21 +630,24 @@ body {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: #fff;
+  background: #F6F8FB;
   z-index: 9999;
-  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .report-viewer-overlay.active {
-  display: flex;
+  display: block;
 }
 .report-viewer-toolbar {
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
   background: #2F6BFF;
   color: #fff;
-  flex-shrink: 0;
+  z-index: 10000;
 }
 .report-viewer-toolbar .back-btn {
   background: rgba(255,255,255,0.2);
@@ -655,17 +658,18 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
-.report-viewer-toolbar .back-btn:hover {
-  background: rgba(255,255,255,0.3);
-}
 .report-viewer-toolbar .viewer-title {
   font-size: 15px;
   font-weight: 500;
 }
-.report-viewer-frame {
-  flex: 1;
-  border: none;
+.report-viewer-content {
+  padding: 0;
+}
+.report-viewer-content iframe {
   width: 100%;
+  height: calc(100vh - 50px);
+  min-height: 800px;
+  border: none;
   background: #F6F8FB;
 }
 
@@ -1291,11 +1295,11 @@ function showReportInViewer(html, title) {
   const titleEl = document.getElementById('viewerTitle');
   titleEl.textContent = title || '诊断报告';
   
-  // Write HTML to iframe
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  frame.src = url;
+  // Use srcdoc for reliable iframe content rendering
+  frame.srcdoc = html;
   
+  // Scroll to top
+  overlay.scrollTop = 0;
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -1303,7 +1307,7 @@ function showReportInViewer(html, title) {
 function closeReportViewer() {
   const overlay = document.getElementById('reportViewerOverlay');
   const frame = document.getElementById('reportViewerFrame');
-  frame.src = 'about:blank';
+  frame.srcdoc = '';
   overlay.classList.remove('active');
   document.body.style.overflow = '';
 }
@@ -1353,7 +1357,9 @@ function showToast(msg) {
     <span class="viewer-title" id="viewerTitle">诊断报告</span>
     <span style="width:60px"></span>
   </div>
-  <iframe class="report-viewer-frame" id="reportViewerFrame"></iframe>
+  <div class="report-viewer-content">
+    <iframe id="reportViewerFrame"></iframe>
+  </div>
 </div>
 
 </body>
