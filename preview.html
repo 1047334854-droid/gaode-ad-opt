@@ -128,6 +128,10 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:#
 .fee-sub{font-size:12px;color:var(--sub);font-weight:400;margin-left:6px}
 label.ck.close-ck{color:#B25B00;font-weight:600}
 nav a.sec{margin-top:10px}
+/* 左侧目录抽屉触发按钮（桌面隐藏，仅窄屏显示） */
+#navBtn{display:none}
+#navMask{display:none}
+body.nav-open{overflow:hidden}
 /* 备注浮层 */
 #memoPop{position:fixed;z-index:999;left:50%;transform:translateX(-50%);width:min(560px,92vw);background:#fff;border-radius:12px;box-shadow:0 12px 48px rgba(21,32,51,.22);padding:16px;display:none}
 #memoPop .mp-t{font-weight:700;margin-bottom:10px;font-size:14px}
@@ -169,12 +173,26 @@ nav a.sec{margin-top:10px}
   /* 窄屏操作列紧凑 */
   .tfee .op,.tstop .op,.tnewb .op,.tc .op{padding:4px 3px}
   .tfee .memo,.tstop .memo,.tnewb .memo,.tc .memo{width:72px}
+  /* 导航：保持在左侧，改为可滑出抽屉（覆盖旧版顶部横排/隐藏规则） */
+  nav{position:fixed!important;top:0;bottom:0;left:0;width:240px!important;display:block!important;
+      transform:translateX(-100%);transition:transform:.22s ease;z-index:1001;box-shadow:2px 0 18px rgba(0,0,0,.18)}
+  body.nav-open nav{transform:translateX(0)}
+  nav .logo{width:auto;border-bottom:1px solid var(--line)}
+  nav a.sec{display:block!important}
+  nav a{border-left:3px solid transparent}
+  #navBtn{display:block;position:fixed;top:10px;left:10px;z-index:1002;background:var(--brand);color:#fff;
+      border:none;border-radius:8px;padding:8px 13px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.2);font-family:inherit}
+  #navMask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:1000}
+  body.nav-open #navMask{display:block}
+  main>h1{padding-top:38px}
 }
 
 </style>
 </head>
 <body>
 <div class="layout">
+<button type='button' id='navBtn' aria-label='目录'>☰ 目录</button>
+<div id='navMask'></div>
 <nav>
 <div class="logo">高德广告优化策略<small>运营执行版 · 2026-09</small></div>
 <a data-goto="sum">结论与总盘</a>
@@ -412,7 +430,11 @@ document.querySelectorAll('select.ownsel').forEach(function(sel){
 });
 document.querySelectorAll('nav a[data-goto]').forEach(function(a){a.addEventListener('click',function(){
  if(a.dataset.zone)switchZone(a.dataset.zone);
- var t=document.getElementById(a.dataset.goto);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
+ var t=document.getElementById(a.dataset.goto);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+ document.body.classList.remove('nav-open');});});
+(function(){var btn=document.getElementById('navBtn'),mask=document.getElementById('navMask');
+ if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+ if(mask)mask.addEventListener('click',function(){document.body.classList.remove('nav-open');});})();
 document.querySelectorAll('.zone-tab').forEach(function(b){b.addEventListener('click',function(){switchZone(b.dataset.zone);});});
 document.querySelectorAll('.lb-btn').forEach(function(b){b.addEventListener('click',function(){
  lightF=b.dataset.l;
