@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>高德广告优化策略 · 运营执行版 v2</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>高德广告优化策略 · 运营执行版 v2.1</title>
+<script>var APP_BUILD='20261010b';</script>
 <style>
 :root{--bg:#F6F8FB;--card:#fff;--ink:#152033;--sub:#637089;--brand:#2F6BFF;--green:#16A37B;--line:#E6EAF2;--red:#D64545;--orange:#E8890C;--yellow_bg:#FFF7E6;--blue_bg:#EBF1FF;--red_bg:#FDECEC;--green_bg:#E7F6F0;}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -472,7 +476,7 @@ document.querySelectorAll('select.ownsel').forEach(function(sel){
  if(sel.disabled)return;
  sel.addEventListener('change',function(){
    var m=getOMap();m[sel.dataset.id]=sel.value;setOMap(m);
-   var d=getStore();d[sel.dataset.id]=d[sel.dataset.id]||{};d[sel.dataset.id].owner=sel.value;d[sel.dataset.id].owner_ts=Date.now();setStore(d);
+   var d=getStore();d[sel.dataset.id]=d[sel.dataset.id]||{};d[sel.dataset.id].owner=sel.value;d[sel.dataset.id].owner_ts=Date.now();setStore(d);if(window.cloud&&cloud.logOp)cloud.logOp(sel.dataset.id,'owner',sel.value);
    var tr=sel.closest('tr');if(tr)tr.dataset.owner=sel.value;
    applyFilter();cloud.touch();});
 });
@@ -567,7 +571,7 @@ function getDeviceId(){
 }
 var cloud={
   pushing:false, dirty:false,
-  deviceId:null, devSha:{},
+  deviceId:null, devSha:{}, legacySha:null,
   ghHdr:function(){return {'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json'};},
   st:function(t,c){var el=document.getElementById('cloudst');if(el){el.textContent=t;el.style.color=c||'#586072';}},
   b64e:function(s){return btoa(unescape(encodeURIComponent(s)));},
@@ -665,12 +669,13 @@ var cloud={
     var r=await fetch(API_BASE+'/git/trees/'+GH_BRANCH+'?recursive=1',{headers:this.ghHdr()});
     if(r.status===404)return {stores:{},blobs:{}};
     if(!r.ok)throw new Error('tree '+r.status);
-    var tj=await r.json(), list=[];
+    var tj=await r.json(), list=[], legacyMeta=null;
     for(var i=0;i<(tj.tree||[]).length;i++){
       var it=tj.tree[i];
       if(it.type==='blob'&&/^devices\/[^/]+\.json$/.test(it.path)){
         list.push({dev:it.path.slice(8,-5),sha:it.sha,size:it.size});
       }
+      if(it.type==='blob'&&it.path==='gaode_opt_data.json')legacyMeta=it;
     }
     var acc={}, blobs={};
     for(var n=0;n<list.length;n++){
@@ -687,6 +692,19 @@ var cloud={
       var st=data.stores||{};
       blobs[dev].stores=st;
       acc=this.mergeInto(acc,st);
+    }
+    if(legacyMeta){
+      var legStores=null;
+      if(this.legacySha&&this.legacySha.sha===legacyMeta.sha)legStores=this.legacySha.stores;
+      else{
+        var lr=await fetch(API_BASE+'/contents/gaode_opt_data.json?ref='+GH_BRANCH,{headers:this.ghHdr()});
+        if(lr.ok){
+          var lj=await lr.json(),lo=JSON.parse(this.b64d(lj.content.replace(/\n/g,'')));
+          legStores=lo.stores||lo;
+          this.legacySha={sha:legacyMeta.sha,stores:legStores};
+        }
+      }
+      if(legStores)acc=this.mergeInto(acc,legStores);
     }
     this.devSha=blobs;
     var JUNK={'junk001':1,'test001':1,'test002':1,'__test__':1};
@@ -770,7 +788,7 @@ var cloud={
  function close(saveFlag){
    if(saveFlag&&curId){var v=ta.value;
      document.querySelectorAll('input.memo[data-id="'+curId+'"]').forEach(function(inp){inp.value=v;});
-     try{var d=getStore();d[curId]=d[curId]||{};d[curId].memo=v;d[curId].memo_ts=Date.now();setStore(d);if(window.cloud&&cloud.touch)cloud.touch();}catch(e){}}
+     try{var d=getStore();d[curId]=d[curId]||{};var mt=Date.now();d[curId].memo=v;d[curId].memo_ts=mt;setStore(d);if(window.cloud&&cloud.logOp)cloud.logOp(curId,'memo',v);if(window.cloud&&cloud.touch)cloud.touch();}catch(e){}}
    pop.style.display='none';curId=null;}
  pop.querySelector('button').onclick=function(){close(true);};
  ta.onkeydown=function(e){if(e.key==='Escape')close(false);if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))close(true);};
